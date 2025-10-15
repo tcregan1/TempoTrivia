@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { TextInput } from "./components/TextInput";
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [roomCode, setRoomCode] = useState("");
@@ -19,6 +20,8 @@ export default function Home() {
     setNickname(trimmed);
     setErrors((e) => ({ ...e, nickname: trimmed.length >= 2 ? undefined : "Min 2 characters" }));
   };
+
+  const router = useRouter();
 
   return (
     <div className="p-6 space-y-4">
@@ -44,9 +47,18 @@ export default function Home() {
         error={errors.roomCode}
       />
 
-      <button className="btn btn-cyan" disabled={!nickname || roomCode.length !== 6}>
-        Join Room
-      </button>
+
+     <button 
+  className="btn btn-cyan" 
+  disabled={!nickname || roomCode.length !== 6}
+  onClick={() => {
+  router.push(`/lobby?nickname=${nickname}&roomcode=${roomCode}`);
+}}
+>
+  Join Room
+</button>
     </div>
   );
 }
+
+

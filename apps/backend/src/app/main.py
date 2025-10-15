@@ -4,8 +4,7 @@ import json, uuid
 
 app = FastAPI()
 
-# --- In-memory room state ---
-# rooms["ABC123"] = {"players":[{"id":"p1","name":"Tom"}], "sockets":[ws1, ws2]}
+
 rooms: Dict[str, Dict[str, List]] = {}
 
 # Track where a socket belongs so we can clean up on disconnect
