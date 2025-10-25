@@ -15,7 +15,10 @@ interface LobbyViewProps {
   roomCode: string;
   onStart: () => void;
   myPlayerId: string;
-  hostId: string
+  hostId: string;
+  gameModes: string[];
+  selectedMode: string;
+  onSelectMode: (modeName: string) => void;
 }
 
 interface PlayingViewProps {
@@ -40,6 +43,9 @@ export default function GameClient() {
   const alias = params.get("nickname") ?? "";
   const [hostId, setHostId] = useState<string>("");
   const [myPlayerId, setMyPlayerId] = useState<string>("")
+  const [gameModes, setGameModes] = useState<string[]>([])
+  const [modeDescriptions, setDescriptions] = useState<string[]>([])
+  const [selectedGameMode, setSelectedGameMode] = useState<string>("");
 
  
   useEffect(() => {
@@ -71,6 +77,12 @@ export default function GameClient() {
             console.log("👑 Host is:", msg.payload?.hostId);
             break;
           }
+          case "game_modes": {
+            console.log("Recieved Game_modes")
+            setGameModes(msg.payload?.name || []);
+            setDescriptions(msg.payload?.description || []);
+            break; 
+          }
           case "game_state_changed": {
             console.log("Game state chagned")
             const next = msg.payload?.newState as GameState | undefined;
@@ -80,6 +92,7 @@ export default function GameClient() {
           case "room_state": {
             setPlayers(msg.payload?.players ?? []);
             setHostId(msg.payload?.hostId || "")
+            setSelectedGameMode(msg.payload?.selectedMode || "")
             break;
           }
           case "round_started": {
@@ -89,13 +102,20 @@ export default function GameClient() {
             setGameState("playing");
             break;
           }
+          case "mode_selected": {
+            console.log("Received Mode Selection Update");
+            setDescriptions([]); // Clear previous descriptions if necessary
+            setSelectedGameMode(msg.payload?.selectedMode || "");
+             break;
+          }
+         
           case "round_results": {
             setLeaderboard(msg.payload?.leaderboard ?? []);
             setGameState("results");
             break;
           }
           default:
-            // Unknown message type – ignore
+            
             break;
         }
       } catch (e) {
@@ -116,6 +136,9 @@ export default function GameClient() {
     };
   }, [rc, alias]);
 
+  const handleSelectMode = (modeName: string) => {
+    send("select_game_mode", { roomCode: rc, mode: modeName });
+  };
 
   useEffect(() => {
     if (gameState !== "playing") return;
@@ -134,10 +157,19 @@ export default function GameClient() {
   };
 
   const handleStartGame = () => {
+    if(!selectedGameMode){
+      console.warn("Cannot start game: No mode selected: ")
+      return
+    }
+    send("start_game", {
+      roomCode: rc,
+      players: players,
+      gameMode: selectedGameMode
+    })
     console.log("Start game clicked! ")
     console.log("Sending to room: ", rc)
     console.log("Players: ", players)
-    send("start_game", { roomCode: rc, players });
+    console.log("Selected Game Mode: ", selectedGameMode)
   };
 
   const handleSubmitAnswer = (artist: string, title: string) => {
@@ -145,12 +177,19 @@ export default function GameClient() {
   };
 
 
-  if (gameState === "lobby") {
-    console.log(" Redering LobbyView with:");
-    console.log(" myPlayerId:", myPlayerId)
-    console.log(" hostId", hostId)
-    return <LobbyView players={players} roomCode={rc} onStart={handleStartGame} myPlayerId={myPlayerId} hostId={hostId} />;
-  }
+if (gameState === "lobby") {
+    // ...
+    return <LobbyView 
+        players={players} 
+        roomCode={rc} 
+        onStart={handleStartGame} 
+        myPlayerId={myPlayerId} 
+        hostId={hostId} 
+        gameModes={gameModes} 
+        selectedMode={selectedGameMode} 
+        onSelectMode={handleSelectMode} 
+    />;
+}
   if (gameState === "playing") {
     return (
       <PlayingView
@@ -165,6 +204,8 @@ export default function GameClient() {
   }
 
   
+  
+  
   return (
     <div className="p-6">
       <p>Unknown state. Returning to lobby…</p>
@@ -172,20 +213,35 @@ export default function GameClient() {
   );
 }
 
-function LobbyView({ players, roomCode, onStart, myPlayerId, hostId}: LobbyViewProps) {
+function LobbyView({ players, roomCode, onStart, myPlayerId, hostId, gameModes, selectedMode, onSelectMode }: LobbyViewProps) {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const isHost = myPlayerId == hostId;
-  console.log("  myPlayerId:", myPlayerId);
-  console.log("  hostId:", hostId);
-  console.log("  isHost:", isHost);
-  console.log("  players:", players);
+  const isHost = myPlayerId === hostId;
+  const canStartGame = players.length > 0 && selectedMode !== "";
+  const buttonText = selectedMode || (isHost ? "Select Game Mode" : "Waiting for Host to Select Mode...");
+
+  const handleModeSelection = (modeName: string) => {
+    if (isHost) {
+      onSelectMode(modeName); // Send mode back up to GameClient state via WebSocket
+      setIsDropdownOpen(false);
+    }
+  };
+  
+  const toggleDropdown = () => {
+    if (isHost) {
+      setIsDropdownOpen(prev => !prev);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
+      {/* Header and Room Code */}
       <div className="flex items-center justify-between">
         <h1 className="heading">Lobby</h1>
         <span className="text-sm bg-gray-800 text-white px-3 py-1 rounded">Room: {roomCode}</span>
       </div>
 
+      {/* Players List Display */}
       <div>
         <h2 className="text-xl font-semibold mb-4">Players</h2>
         <div className="space-y-3">
@@ -203,18 +259,64 @@ function LobbyView({ players, roomCode, onStart, myPlayerId, hostId}: LobbyViewP
         </div>
       </div>
 
-      {isHost ? (<button onClick={onStart} className="w-full btn btn-cyan disabled:opacity-50" disabled={players.length === 0}>
-        Start Game
-      </button>
+      {/* Game Mode Selection Dropdown */}
+      <div className="w-full relative">
+        <button 
+          id="dropdownDefaultButton" 
+          onClick={toggleDropdown} 
+          disabled={!isHost} 
+          className={`w-full text-white ${isHost ? 'bg-blue-700 hover:bg-blue-800 focus:ring-blue-300' : 'bg-gray-600 disabled:opacity-50 cursor-default'} 
+                     focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800`} 
+          type="button"
+        >
+          {buttonText} 
+          <svg className="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 4 4 4-4"/>
+          </svg>
+        </button>
+
+        {isDropdownOpen && isHost && (
+          <div 
+            id="dropdown" 
+            className="absolute z-10 mt-1 w-full bg-white divide-y divide-gray-100 rounded-lg shadow-lg dark:bg-gray-700"
+          >
+            <ul className="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefaultButton">
+              {gameModes.map((modeName) => (
+                <li key={modeName}>
+                  <a 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleModeSelection(modeName);
+                    }}
+                    className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                  >
+                    {modeName}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Start Game Button / Wait Message */}
+      {isHost ? (
+        <button 
+          onClick={onStart} 
+          className="w-full btn btn-cyan disabled:opacity-50" 
+          disabled={!canStartGame} 
+        >
+          Start Game
+        </button>
       ) : (
         <div className="text-center text-gray-400">
           Waiting for host to start the game...
-          </div> 
+        </div> 
       )}
     </div> 
   );
 }
-
 function PlayingView({ songUrl, timeRemaining, onSubmitAnswer }: PlayingViewProps) {
   const [artistInput, setArtistInput] = useState("");
   const [songInput, setSongInput] = useState("");

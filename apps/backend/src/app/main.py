@@ -1,6 +1,9 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from typing import Dict, List
 import json, uuid
+import aiohttp
+
+from database import Database
 
 app = FastAPI()
 
@@ -21,6 +24,22 @@ async def broadcast_room(room_code: str, message: dict):
     for ws in dead:
         if ws in room["sockets"]:
             room["sockets"].remove(ws)
+            
+
+
+def get_random_song(songId):
+    song = Database.get_song(songId)
+    return song
+
+
+
+async def get_fresh_preview_url(track_id):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f'https://api.deezer.com/track/{track_id}') as resp:
+            data = await resp.json()
+            return data.get('preview')
+
+
 
 
 def room_state_payload(room_code: str) -> dict:
@@ -35,9 +54,43 @@ def room_state_payload(room_code: str) -> dict:
                 {"id": p["id"], "name": p["name"], "isHost": (p["id"] == host_id)}
                 for p in room["players"]
             ],
+            "selectedMode": room.get("selected_mode", "")
         },
     }
+    
+def get_mode_options():
+    options = Database.get_all_playlists()
+    name = [item['name'] for item in options]
+    description = [item['description'] for item in options]
+    print(options)
+    print(name)
+    print(description)
+    return name, description
 
+async def start_round(room_code):
+    
+    song = get_random_song(1)
+    
+    # Fetch fresh URL right before broadcasting
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f'https://api.deezer.com/track/{song["deezer_track_id"]}') as resp:
+            data = await resp.json()
+            preview_url = data.get('preview')
+    
+    
+    print("PREVIEW URL:", preview_url)
+    await broadcast_room(room_code, {
+        "type": "round_started",
+        "payload": {
+            "songData": {
+                "url": preview_url,
+                "title": song["title"],
+                "artist": song["artist"]
+            },
+            "duration": 20
+        }
+    })
+    
 
 @app.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
@@ -64,7 +117,7 @@ async def ws_endpoint(ws: WebSocket):
             await ws.close(code=1008)
             return
 
-        rooms.setdefault(room_code, {"players": [], "sockets": [], "host_id": None})
+        rooms.setdefault(room_code, {"players": [], "sockets": [], "host_id": None, "selected_mode":""})
 
         # Register player
         player_id = uuid.uuid4().hex[:8]
@@ -75,6 +128,15 @@ async def ws_endpoint(ws: WebSocket):
         # Set host if first player
         if rooms[room_code]["host_id"] is None:
             rooms[room_code]["host_id"] = player_id
+        
+        name, description = get_mode_options()
+        await ws.send_text(json.dumps({
+            "type":"game_modes",
+            "payload": {
+                "name": name,
+                "description":description,
+            }
+        }))
 
         # Send joined confirmation
         await ws.send_text(json.dumps({
@@ -98,8 +160,30 @@ async def ws_endpoint(ws: WebSocket):
             msg_type = msg.get("type")
             print(f" Message type: {msg_type}")
             payload = msg.get("payload", {})
-
-            if msg_type == "start_game":
+            if msg_type == "select_game_mode":
+                room = rooms.get(room_code)
+                selected_mode = payload.get("mode") # Get the mode from the client payload
+                
+                # Input validation (always a good idea)
+                if not selected_mode or not room:
+                    continue
+                
+                # Check if sender is host
+                if player_id != room.get("host_id"):
+                    print(f" Not host! Cannot select mode.")
+                    continue               
+                room["selected_mode"] = selected_mode
+                payload = {
+                    "type": "mode_selected",
+                    "payload": {
+                        "selectedMode": selected_mode,
+                    }
+                }
+                await broadcast_room(room_code, payload)
+                print(f" Mode set and broadcast: {selected_mode}")
+                continue 
+            
+            elif msg_type == "start_game":
                 print(f" Start game request from player {player_id}")
                 room = rooms.get(room_code)
                 
@@ -111,34 +195,31 @@ async def ws_endpoint(ws: WebSocket):
                         "payload": {"code": "NOT_HOST"}
                     }))
                     continue
+                
+                
+                current_mode = room.get("selected_mode")
+                print(f" Starting game using mode: {current_mode}")
 
-                print(f" Starting game for room {room_code}")
-
-                # Broadcast game state change
+                # Broadcast game state change (Omitted for brevity)
                 await broadcast_room(room_code, {
                     "type": "game_state_changed",
                     "payload": {"newState": "playing"}
                 })
+                await start_round(room_code)
 
-                # Send round data
-                await broadcast_room(room_code, {
-                    "type": "round_started",
-                    "payload": {
-                        "songData": {
-                            "url": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-                            "title": "Test Song",
-                            "artist": "Test Artist"
-                        },
-                        "duration": 20
-                    }
-                })
 
             elif msg_type == "submit_answer":
                 artist = payload.get("artist", "").strip()
                 title = payload.get("title", "").strip()
                 print(f" Answer from {player_id}: {artist} - {title}")
-                
-                # TODO: Check if answer is correct
+                song = get_random_song(1)
+
+                if artist == song["artist"] and title == song["title"]:
+                    print("ARTIST and TITLE CORRECT")
+                elif artist == song["artist"] and not title == song["title"]:
+                    print("Only got Artist")
+                elif title == song["title"] and not artist == song["artist"]:
+                    print("Only Title")
                 # TODO: Update player score
                 # For now, just acknowledge
                 await ws.send_text(json.dumps({
@@ -167,3 +248,5 @@ async def ws_endpoint(ws: WebSocket):
                     rooms.pop(rc, None)
                 else:
                     await broadcast_room(rc, room_state_payload(rc))
+                    
+    
