@@ -1,7 +1,8 @@
-import os 
+import os
+from sqlite3 import Cursor 
 from supabase import create_client, Client
 from dotenv import load_dotenv
-
+import random
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -68,6 +69,31 @@ class Database:
         """Get song by ID"""
         response = supabase.table("songs").select("*").eq("id", song_id).execute()
         return response.data[0] if response.data else None
+    
+    @staticmethod
+    def get_random_song_exclude_ids(playlist_id, excluded_ids):
+        """Get a random song from a specific playlist, excluding certain songs."""
+    
+        query = (
+             supabase.table("playlist_songs")
+            .select("songs(*)") 
+            .eq("playlist_id", playlist_id)
+        )
+
+ 
+        if excluded_ids:
+            query = query.not_.in_("song_id", excluded_ids)
+
+   
+        response = query.execute()
+        data = response.data
+
+   
+        if not data:
+            return None  
+        return random.choice([item["songs"] for item in data])
+
+    
     @staticmethod
     def add_song_to_playlist(playlist_id, song_id):
         """Add a song to a playlist"""

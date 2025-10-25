@@ -55,6 +55,7 @@ def room_state_payload(room_code: str) -> dict:
                 for p in room["players"]
             ],
             "selectedMode": room.get("selected_mode", "")
+            
         },
     }
     
@@ -69,8 +70,15 @@ def get_mode_options():
 
 async def start_round(room_code):
     
-    song = get_random_song(1)
+    room = rooms.get(room_code)
+    if not room:
+        return
     
+    played_songs_id = rooms.get("played_songs_id", [])
+    song = Database.get_random_song_exclude_ids(1, played_songs_id)
+    room["current_song"] = song
+    room["played_song_ids"].append(song["id"])
+    room["round_number"] += 1
     # Fetch fresh URL right before broadcasting
     async with aiohttp.ClientSession() as session:
         async with session.get(f'https://api.deezer.com/track/{song["deezer_track_id"]}') as resp:
@@ -87,9 +95,33 @@ async def start_round(room_code):
                 "title": song["title"],
                 "artist": song["artist"]
             },
-            "duration": 20
+            "duration": 30
         }
     })
+
+
+def check_answer(artist_guess, title_guess, artist, title) -> str:   
+    def normalize(text):
+        return ''.join(text.lower().split())
+
+    artist_guess = normalize(artist_guess)
+    title_guess = normalize(title_guess)
+    artist = normalize(artist)
+    title = normalize(title)
+    
+
+    if artist_guess == artist and title_guess == title:
+        print("ARTIST and TITLE CORRECT")
+        return "artist and title"
+    elif artist_guess == artist:
+        print("Only Artist Correct")
+        return "artist"
+    elif title_guess == title:
+        print("Only Title Correct")
+        return "title"
+    else:
+        return "none"
+    
     
 
 @app.websocket("/ws")
@@ -117,7 +149,7 @@ async def ws_endpoint(ws: WebSocket):
             await ws.close(code=1008)
             return
 
-        rooms.setdefault(room_code, {"players": [], "sockets": [], "host_id": None, "selected_mode":""})
+        rooms.setdefault(room_code, {"players": [], "sockets": [], "host_id": None, "selected_mode":"", "current_song":None, "played_song_ids":[], "round_number": 0})
 
         # Register player
         player_id = uuid.uuid4().hex[:8]
@@ -209,17 +241,22 @@ async def ws_endpoint(ws: WebSocket):
 
 
             elif msg_type == "submit_answer":
+                room = rooms.get(room_code)
+                if not room:
+                    print(f"Room {room_code} not found.")
+                    return
                 artist = payload.get("artist", "").strip()
                 title = payload.get("title", "").strip()
                 print(f" Answer from {player_id}: {artist} - {title}")
-                song = get_random_song(1)
+                song = room["current_song"]
+                print(f"THE SONG IS: {song["title"]}")
+                print(f"THE SONG IS: {song["artist"]}")
+                if not song:
+                    print(f"Song not set for {room_code}")
+                    return
+                result = check_answer(artist, title, song["artist"], song["title"])
+                print(f"Result:{result}")
 
-                if artist == song["artist"] and title == song["title"]:
-                    print("ARTIST and TITLE CORRECT")
-                elif artist == song["artist"] and not title == song["title"]:
-                    print("Only got Artist")
-                elif title == song["title"] and not artist == song["artist"]:
-                    print("Only Title")
                 # TODO: Update player score
                 # For now, just acknowledge
                 await ws.send_text(json.dumps({
@@ -248,5 +285,7 @@ async def ws_endpoint(ws: WebSocket):
                     rooms.pop(rc, None)
                 else:
                     await broadcast_room(rc, room_state_payload(rc))
+
+
                     
     
