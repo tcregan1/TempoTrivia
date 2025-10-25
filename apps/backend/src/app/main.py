@@ -69,82 +69,53 @@ def get_mode_options():
     print(description)
     return name, description
 
-async def start_round(room_code):
+async def start_round(room_code: str):
     room = rooms.get(room_code)
     if not room:
         return
-    
-    played_songs_id = room.get("played_song_ids", [])
-    song = Database.get_random_song_exclude_ids(1, played_songs_id)
+
+    # ensure exclude ids are INTs and unique
+    exclude_ids = list({int(x) for x in room.get("played_song_ids", []) if x is not None})
+
+    # TODO: use the real playlist/mode id instead of hard-coded 1
+    song = Database.get_random_song_exclude_ids(1, exclude_ids)
+    if not song:
+        await broadcast_room(room_code, {"type": "no_more_songs", "payload": {}})
+        return
+
     room["current_song"] = song
-    room["played_song_ids"].append(song["id"])
+    # record the DB id you are excluding on
+    room.setdefault("played_song_ids", [])
+    if song["id"] not in room["played_song_ids"]:
+        room["played_song_ids"].append(int(song["id"]))
+
     room["round_number"] += 1
     room["round_start_time"] = time.time()
-   
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f'https://api.deezer.com/track/{song["deezer_track_id"]}') as resp:
-            data = await resp.json()
-            preview_url = data.get('preview')
-    
-    print("PREVIEW URL:", preview_url)
-    
-    # Check if host-only audio mode
+
+    preview_url = await get_fresh_preview_url(song["deezer_track_id"])
+
     if room.get("host_only_audio"):
-        # Send URL only to host
         host_id = room.get("host_id")
-        host_ws = None
-        for ws in room["sockets"]:
-            if socket_index.get(ws, {}).get("playerId") == host_id:
-                host_ws = ws
-                break
-        
+        host_ws = next((ws for ws in room["sockets"] if socket_index.get(ws, {}).get("playerId") == host_id), None)
         if host_ws:
             await host_ws.send_text(json.dumps({
                 "type": "round_started",
-                "payload": {
-                    "songData": {
-                        "url": preview_url,
-                        "title": song["title"],
-                        "artist": song["artist"]
-                    },
-                    "duration": 30,
-                    "isHost": True
-                }
+                "payload": {"songData": {"url": preview_url, "title": song["title"], "artist": song["artist"]}, "duration": 30, "isHost": True}
             }))
-        
-        # Send to everyone else (without URL)
         for ws in room["sockets"]:
             if socket_index.get(ws, {}).get("playerId") != host_id:
-                try:
-                    await ws.send_text(json.dumps({
-                        "type": "round_started",
-                        "payload": {
-                            "songData": {
-                                "url": "",  # No URL for non-hosts
-                                "title": song["title"],
-                                "artist": song["artist"]
-                            },
-                            "duration": 30,
-                            "isHost": False
-                        }
-                    }))
-                except Exception:
-                    pass
+                await ws.send_text(json.dumps({
+                    "type": "round_started",
+                    "payload": {"songData": {"url": "", "title": song["title"], "artist": song["artist"]}, "duration": 30, "isHost": False}
+                }))
     else:
-        # Normal mode - send to everyone
         await broadcast_room(room_code, {
             "type": "round_started",
-            "payload": {
-                "songData": {
-                    "url": preview_url,
-                    "title": song["title"],
-                    "artist": song["artist"]
-                },
-                "duration": 30
-            }
+            "payload": {"songData": {"url": preview_url, "title": song["title"], "artist": song["artist"]}, "duration": 30}
         })
-    
+
     asyncio.create_task(round_timer(room_code, 30))
+
 
 
 async def round_timer(room_code, duration):
@@ -338,7 +309,7 @@ async def ws_endpoint(ws: WebSocket):
                     return
                 result = check_answer(artist, title, song["artist"], song["title"])
                 print(f"Result:{result}")
-                if result:
+                if result == "artist and title":
                     base_score = 1000
                     speed_penalty = (elapsed * 10)
                     score = max(base_score - speed_penalty, 100)
@@ -347,6 +318,17 @@ async def ws_endpoint(ws: WebSocket):
                         if player["id"] == player_id:
                             player["score"] += score
                             break
+                        
+                elif result == "title" or result == "artist":
+                    base_score = 500
+                    speed_penalty = (elapsed * 10)
+                    score = max(base_score - speed_penalty, 50)
+                    score = int(round(score,10))
+                    for player in room["players"]:
+                        if player["id"] == player_id:
+                            player["score"] += score
+                            break
+                
                 print(f"Player score = {player["score"]}")
                 await ws.send_text(json.dumps({
                     "type": "answer_received",
