@@ -2,8 +2,9 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from typing import Dict, List
 import json, uuid
 import aiohttp
-
+import time
 from database import Database
+import asyncio
 
 app = FastAPI()
 
@@ -69,35 +70,86 @@ def get_mode_options():
     return name, description
 
 async def start_round(room_code):
-    
     room = rooms.get(room_code)
     if not room:
         return
     
-    played_songs_id = rooms.get("played_songs_id", [])
+    played_songs_id = room.get("played_song_ids", [])
     song = Database.get_random_song_exclude_ids(1, played_songs_id)
     room["current_song"] = song
     room["played_song_ids"].append(song["id"])
     room["round_number"] += 1
-    # Fetch fresh URL right before broadcasting
+    room["round_start_time"] = time.time()
+   
     async with aiohttp.ClientSession() as session:
         async with session.get(f'https://api.deezer.com/track/{song["deezer_track_id"]}') as resp:
             data = await resp.json()
             preview_url = data.get('preview')
     
-    
     print("PREVIEW URL:", preview_url)
-    await broadcast_room(room_code, {
-        "type": "round_started",
-        "payload": {
-            "songData": {
-                "url": preview_url,
-                "title": song["title"],
-                "artist": song["artist"]
-            },
-            "duration": 30
-        }
-    })
+    
+    # Check if host-only audio mode
+    if room.get("host_only_audio"):
+        # Send URL only to host
+        host_id = room.get("host_id")
+        host_ws = None
+        for ws in room["sockets"]:
+            if socket_index.get(ws, {}).get("playerId") == host_id:
+                host_ws = ws
+                break
+        
+        if host_ws:
+            await host_ws.send_text(json.dumps({
+                "type": "round_started",
+                "payload": {
+                    "songData": {
+                        "url": preview_url,
+                        "title": song["title"],
+                        "artist": song["artist"]
+                    },
+                    "duration": 30,
+                    "isHost": True
+                }
+            }))
+        
+        # Send to everyone else (without URL)
+        for ws in room["sockets"]:
+            if socket_index.get(ws, {}).get("playerId") != host_id:
+                try:
+                    await ws.send_text(json.dumps({
+                        "type": "round_started",
+                        "payload": {
+                            "songData": {
+                                "url": "",  # No URL for non-hosts
+                                "title": song["title"],
+                                "artist": song["artist"]
+                            },
+                            "duration": 30,
+                            "isHost": False
+                        }
+                    }))
+                except Exception:
+                    pass
+    else:
+        # Normal mode - send to everyone
+        await broadcast_room(room_code, {
+            "type": "round_started",
+            "payload": {
+                "songData": {
+                    "url": preview_url,
+                    "title": song["title"],
+                    "artist": song["artist"]
+                },
+                "duration": 30
+            }
+        })
+    
+    asyncio.create_task(round_timer(room_code, 30))
+
+
+async def round_timer(room_code, duration):
+    await asyncio.sleep(duration)
+    await end_round(room_code)
 
 
 def check_answer(artist_guess, title_guess, artist, title) -> str:   
@@ -122,7 +174,24 @@ def check_answer(artist_guess, title_guess, artist, title) -> str:
     else:
         return "none"
     
-    
+async def end_round(room_code):
+    room = rooms.get(room_code)
+    room["game_state"] = "leaderboard"
+    leaderboard = sorted(room["players"], key=lambda p: p["score"], reverse=True)   
+    await broadcast_room(room_code, {
+        "type": "round_ended",
+        "payload": {
+            "leaderboard": [{"name": p["name"], "score": p["score"]} for p in leaderboard],
+            "currentRound": room["round_number"],
+            "totalRounds": room["total_rounds"]
+        }
+    })
+    if room["round_number"] >= room["total_rounds"]:
+        room["game_state"] = "ended"
+        await broadcast_room(room_code, {
+            "type": "game_ended",
+            "payload": {"finalLeaderboard": leaderboard}
+        })
 
 @app.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
@@ -149,11 +218,22 @@ async def ws_endpoint(ws: WebSocket):
             await ws.close(code=1008)
             return
 
-        rooms.setdefault(room_code, {"players": [], "sockets": [], "host_id": None, "selected_mode":"", "current_song":None, "played_song_ids":[], "round_number": 0})
+        rooms.setdefault(room_code, {
+            "players": [],
+            "sockets": [], 
+            "host_id": None,
+            "selected_mode":"", 
+            "current_song":None,
+            "played_song_ids":[],
+            "round_number": 0,
+            "round_start_time": None,
+            "total_rounds":10,
+            "host_only_audio": False
+            })
 
         # Register player
         player_id = uuid.uuid4().hex[:8]
-        rooms[room_code]["players"].append({"id": player_id, "name": nickname})
+        rooms[room_code]["players"].append({"id": player_id, "name": nickname, "score": 0})
         rooms[room_code]["sockets"].append(ws)
         socket_index[ws] = {"roomCode": room_code, "playerId": player_id}
 
@@ -241,6 +321,8 @@ async def ws_endpoint(ws: WebSocket):
 
 
             elif msg_type == "submit_answer":
+                
+                elapsed = time.time() - room["round_start_time"]
                 room = rooms.get(room_code)
                 if not room:
                     print(f"Room {room_code} not found.")
@@ -250,19 +332,45 @@ async def ws_endpoint(ws: WebSocket):
                 print(f" Answer from {player_id}: {artist} - {title}")
                 song = room["current_song"]
                 print(f"THE SONG IS: {song["title"]}")
-                print(f"THE SONG IS: {song["artist"]}")
+                print(f"THE Artist IS: {song["artist"]}")
                 if not song:
                     print(f"Song not set for {room_code}")
                     return
                 result = check_answer(artist, title, song["artist"], song["title"])
                 print(f"Result:{result}")
-
-                # TODO: Update player score
-                # For now, just acknowledge
+                if result:
+                    base_score = 1000
+                    speed_penalty = (elapsed * 10)
+                    score = max(base_score - speed_penalty, 100)
+                    score = int(round(score, 10))
+                    for player in room["players"]:
+                        if player["id"] == player_id:
+                            player["score"] += score
+                            break
+                print(f"Player score = {player["score"]}")
                 await ws.send_text(json.dumps({
                     "type": "answer_received",
                     "payload": {"artist": artist, "title": title}
                 }))
+            elif msg_type == "next_round":
+                room = rooms.get(room_code)
+                if player_id != room.get("host_id"):
+                    continue
+    
+                if room["round_number"] < room["total_rounds"]:
+                    await start_round(room_code)
+            elif msg_type == "set_audio_mode":
+                room = rooms.get(room_code)
+                if player_id != room.get("host_id"):
+                    continue
+    
+            host_only = payload.get("hostOnly", False)
+            room["host_only_audio"] = host_only
+    
+            await broadcast_room(room_code, {
+                "type": "audio_mode_set",
+                "payload": {"hostOnlyAudio": host_only}
+            })
 
     except WebSocketDisconnect:
         print(f" Player {player_id} disconnected")
