@@ -29,11 +29,21 @@ interface LobbyViewProps {
   onAudioModeToggle: (hostOnly: boolean) => void;
 }
 
+interface AnswerResultPayload {
+  artistCorrect: boolean;
+  titleCorrect: boolean;
+  bothCorrect: boolean;
+  scoreAwarded: number;
+  artistGuess: string;
+  titleGuess: string;
+}
+
 interface PlayingViewProps {
   songUrl: string;
   timeRemaining: number;
   onSubmitAnswer: (artist: string, title: string) => void;
   reveal?: { title: string; artist: string; artistImageUrl?: string | null } | null;
+  answerResult: AnswerResultPayload | null;
 }
 
 interface LeaderboardViewProps {
@@ -85,6 +95,7 @@ export default function GameClient() {
   const [hostOnlyAudio, setHostOnlyAudio] = useState(false);
   const [isHostAudioMode, setIsHostAudioMode] = useState(false);
   const [reveal, setReveal] = useState<{ title: string; artist: string; artistImageUrl?: string | null } | null>(null);
+  const [answerResult, setAnswerResult] = useState<AnswerResultPayload | null>(null);
 
 
   useEffect(() => {
@@ -139,6 +150,8 @@ export default function GameClient() {
             setTimeRemaining(msg.payload?.duration ?? 30);
             setIsHostAudioMode(msg.payload?.isHost === false);
             setGameState("playing");
+            setReveal(null);
+            setAnswerResult(null);
             break;
           }
           case "mode_selected": {
@@ -149,6 +162,7 @@ export default function GameClient() {
           }
           case "round_ended": {
             setReveal(null);
+            setAnswerResult(null);
             setLeaderboard(msg.payload?.leaderboard ?? []);
             setCurrentRound(msg.payload?.currentRound ?? 0);
             setTotalRounds(msg.payload?.totalRounds ?? 10);
@@ -169,6 +183,19 @@ export default function GameClient() {
           case "answer_reveal": {
             const p = msg.payload;
             setReveal({ title: p.title, artist: p.artist, artistImageUrl: p.artistImageUrl });
+            break;
+          }
+          case "answer_received": {
+            const payload = msg.payload ?? {};
+            const result = payload.result ?? {};
+            setAnswerResult({
+              artistCorrect: Boolean(result.artist_correct),
+              titleCorrect: Boolean(result.title_correct),
+              bothCorrect: Boolean(result.both_correct),
+              scoreAwarded: typeof payload.scoreAwarded === "number" ? payload.scoreAwarded : 0,
+              artistGuess: payload.artist ?? "",
+              titleGuess: payload.title ?? "",
+            });
             break;
           }
           default:
@@ -587,6 +614,7 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal }: Playing
     setHasSubmitted(false);
     setArtistInput("");
     setSongInput("");
+    setLastGuess(null);
   }, [songUrl]);
 
   useEffect(() => {
@@ -817,6 +845,7 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal }: Playing
           )}
         </>
       )}
+      <p className="text-sm opacity-90">{description}</p>
     </div>
   );
 }
