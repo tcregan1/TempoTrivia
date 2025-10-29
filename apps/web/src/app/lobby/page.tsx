@@ -255,7 +255,7 @@ export default function GameClient() {
           songUrl={songData.url}
           timeRemaining={timeRemaining}
           onSubmitAnswer={handleSubmitAnswer}
-          reveal = {reveal}
+          reveal={reveal}
         />
       )}
       {gameState === "leaderboard" && (
@@ -493,11 +493,15 @@ function LobbyView({
 
 
 // ---- Playing View ----
-function PlayingView({ songUrl, timeRemaining, onSubmitAnswer }: PlayingViewProps) {
+function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal }: PlayingViewProps) {
   const [artistInput, setArtistInput] = useState("");
   const [songInput, setSongInput] = useState("");
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [revealCountdown, setRevealCountdown] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const isRevealPhase = Boolean(reveal);
+  const REVEAL_DURATION = 5;
 
   useEffect(() => {
     if (audioRef.current && songUrl) {
@@ -513,14 +517,40 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer }: PlayingViewProp
     setSongInput("");
   }, [songUrl]);
 
+  useEffect(() => {
+    if (!isRevealPhase) {
+      setRevealCountdown(0);
+      return;
+    }
+
+    setRevealCountdown(REVEAL_DURATION);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+
+    const interval = window.setInterval(() => {
+      setRevealCountdown((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [isRevealPhase]);
+
   const handleSubmit = () => {
-    if (!artistInput || !songInput || hasSubmitted) return;
+    if (!artistInput || !songInput || hasSubmitted || isRevealPhase) return;
     onSubmitAnswer(artistInput.trim(), songInput.trim());
     setHasSubmitted(true);
   };
 
   const progressPercentage = (timeRemaining / 30) * 100;
-  const canSubmit = Boolean(artistInput && songInput && timeRemaining > 0 && !hasSubmitted);
+  const revealProgress = (revealCountdown / REVEAL_DURATION) * 100;
+  const canSubmit = Boolean(!isRevealPhase && artistInput && songInput && timeRemaining > 0 && !hasSubmitted);
 
   const getProgressColor = () => {
     if (timeRemaining > 20) return "from-green-500 to-emerald-500";
@@ -536,7 +566,6 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer }: PlayingViewProp
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-center gap-4 mb-8">
         <div className="text-6xl animate-bounce">🎵</div>
         <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-600 bg-clip-text text-transparent">
@@ -546,81 +575,121 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer }: PlayingViewProp
 
       <audio ref={audioRef} src={songUrl} className="hidden" />
 
-      {/* Visual Audio Indicator */}
-      <div className="flex justify-center gap-2 py-6">
-        <div className="w-2 h-8 bg-cyan-500 rounded-full animate-pulse" style={{animationDelay: '0ms'}}></div>
-        <div className="w-2 h-12 bg-cyan-400 rounded-full animate-pulse" style={{animationDelay: '150ms'}}></div>
-        <div className="w-2 h-6 bg-cyan-500 rounded-full animate-pulse" style={{animationDelay: '300ms'}}></div>
-        <div className="w-2 h-10 bg-cyan-400 rounded-full animate-pulse" style={{animationDelay: '450ms'}}></div>
-        <div className="w-2 h-8 bg-cyan-500 rounded-full animate-pulse" style={{animationDelay: '600ms'}}></div>
-      </div>
+      {isRevealPhase ? (
+        <div className="relative overflow-hidden rounded-3xl border border-purple-500/30 bg-gradient-to-br from-purple-900/70 via-slate-900 to-black p-10 shadow-[0_20px_60px_rgba(168,85,247,0.35)]">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(124,58,237,0.35),_transparent_60%)]" />
+          <div className="relative flex flex-col items-center gap-8 md:flex-row md:items-center md:justify-center">
+            {reveal?.artistImageUrl ? (
+              <div className="relative">
+                <div className="absolute inset-0 -translate-x-4 translate-y-4 rounded-full bg-purple-500/30 blur-2xl" />
+                <div className="relative h-40 w-40 overflow-hidden rounded-full ring-4 ring-purple-400/60 shadow-[0_0_40px_rgba(168,85,247,0.55)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={reveal.artistImageUrl}
+                    alt={`${reveal.artist} artist portrait`}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="relative flex h-36 w-36 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 text-5xl text-white shadow-[0_0_30px_rgba(129,140,248,0.6)]">
+                🎤
+              </div>
+            )}
 
-      {/* Progress Bar */}
-      <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-2xl shadow-2xl border border-gray-700">
-        <div className="flex justify-between items-center mb-3">
-          <span className="text-gray-400 font-medium">Time Remaining</span>
-          <span className={`text-5xl font-bold ${getTimerColor()} transition-colors duration-300`}>
-            {timeRemaining}s
-          </span>
-        </div>
-        <div className="w-full bg-gray-700 rounded-full h-6 overflow-hidden shadow-inner">
-          <div 
-            className={`bg-gradient-to-r ${getProgressColor()} h-full transition-all duration-1000 ease-linear shadow-lg`}
-            style={{ width: `${progressPercentage}%` }}
-          />
-        </div>
-      </div>
+            <div className="max-w-xl text-center md:text-left">
+              <p className="uppercase tracking-[0.4em] text-xs text-purple-200/80">Answer Reveal</p>
+              <h2 className="mt-4 text-4xl font-extrabold text-white drop-shadow-[0_4px_16px_rgba(79,70,229,0.45)]">
+                {reveal?.artist}
+              </h2>
+              <p className="mt-3 text-2xl font-semibold text-purple-100">“{reveal?.title}”</p>
 
-      {/* Input Fields */}
-      <div className="space-y-4">
-        <div className="relative">
-          <span className="absolute left-4 top-4 text-2xl">🎤</span>
-          <input
-            type="text"
-            value={artistInput}
-            onChange={(e) => setArtistInput(e.target.value)}
-            placeholder="Artist Name"
-            disabled={hasSubmitted}
-            className="w-full pl-14 pr-4 py-4 rounded-xl bg-gray-800 border-2 border-gray-700 text-white text-lg
-                       placeholder-gray-500 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/30
-                       outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed
-                       shadow-lg hover:border-gray-600"
-          />
+              <div className="mt-6 space-y-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium text-purple-100/90 backdrop-blur">
+                  <span className="text-lg">⏱️</span>
+                  {revealCountdown > 0 ? `Next round in ${revealCountdown}s` : "Get ready for the next round!"}
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400 transition-all duration-700 ease-out"
+                    style={{ width: `${revealProgress}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div className="relative">
-          <span className="absolute left-4 top-4 text-2xl">🎵</span>
-          <input
-            type="text"
-            value={songInput}
-            onChange={(e) => setSongInput(e.target.value)}
-            placeholder="Song Title"
-            disabled={hasSubmitted}
-            className="w-full pl-14 pr-4 py-4 rounded-xl bg-gray-800 border-2 border-gray-700 text-white text-lg
-                       placeholder-gray-500 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/30
-                       outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed
-                       shadow-lg hover:border-gray-600"
-          />
-        </div>
-      </div>
-
-      {/* Submit Button */}
-      {!hasSubmitted ? (
-        <button 
-          onClick={handleSubmit} 
-          disabled={!canSubmit} 
-          className="w-full py-5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 
-                     hover:to-blue-700 text-white text-xl font-bold rounded-xl disabled:opacity-50 
-                     disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] 
-                     transition-all shadow-2xl shadow-cyan-500/50 hover:shadow-cyan-500/70"
-        >
-          Submit Answer
-        </button>
       ) : (
-        <div className="w-full p-5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl 
-                        text-center font-bold text-xl shadow-2xl shadow-green-500/50 animate-pulse">
-          ✓ Answer Submitted! Waiting for round to end...
-        </div>
+        <>
+          <div className="flex justify-center gap-2 py-6">
+            <div className="h-8 w-2 animate-pulse rounded-full bg-cyan-500" style={{ animationDelay: "0ms" }}></div>
+            <div className="h-12 w-2 animate-pulse rounded-full bg-cyan-400" style={{ animationDelay: "150ms" }}></div>
+            <div className="h-6 w-2 animate-pulse rounded-full bg-cyan-500" style={{ animationDelay: "300ms" }}></div>
+            <div className="h-10 w-2 animate-pulse rounded-full bg-cyan-400" style={{ animationDelay: "450ms" }}></div>
+            <div className="h-8 w-2 animate-pulse rounded-full bg-cyan-500" style={{ animationDelay: "600ms" }}></div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-700 bg-gray-800/50 p-6 shadow-2xl backdrop-blur-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="font-medium text-gray-400">Time Remaining</span>
+              <span className={`text-5xl font-bold ${getTimerColor()} transition-colors duration-300`}>
+                {timeRemaining}s
+              </span>
+            </div>
+            <div className="h-6 w-full overflow-hidden rounded-full bg-gray-700 shadow-inner">
+              <div
+                className={`h-full bg-gradient-to-r ${getProgressColor()} shadow-lg transition-all duration-1000 ease-linear`}
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="relative">
+              <span className="absolute left-4 top-4 text-2xl">🎤</span>
+              <input
+                type="text"
+                value={artistInput}
+                onChange={(e) => setArtistInput(e.target.value)}
+                placeholder="Artist Name"
+                disabled={hasSubmitted}
+                className="w-full rounded-xl border-2 border-gray-700 bg-gray-800 pl-14 pr-4 py-4 text-lg text-white shadow-lg transition-all
+                       placeholder-gray-500 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/30
+                       disabled:cursor-not-allowed disabled:opacity-50 hover:border-gray-600 outline-none"
+              />
+            </div>
+
+            <div className="relative">
+              <span className="absolute left-4 top-4 text-2xl">🎵</span>
+              <input
+                type="text"
+                value={songInput}
+                onChange={(e) => setSongInput(e.target.value)}
+                placeholder="Song Title"
+                disabled={hasSubmitted}
+                className="w-full rounded-xl border-2 border-gray-700 bg-gray-800 pl-14 pr-4 py-4 text-lg text-white shadow-lg transition-all
+                       placeholder-gray-500 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/30
+                       disabled:cursor-not-allowed disabled:opacity-50 hover:border-gray-600 outline-none"
+              />
+            </div>
+          </div>
+
+          {!hasSubmitted ? (
+            <button
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className="w-full transform rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 py-5 text-xl font-bold text-white shadow-2xl shadow-cyan-500/50 transition-all
+                     hover:scale-[1.02] hover:from-cyan-600 hover:to-blue-700 hover:shadow-cyan-500/70 active:scale-[0.98]
+                     disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Submit Answer
+            </button>
+          ) : (
+            <div className="w-full animate-pulse rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 p-5 text-center text-xl font-bold text-white shadow-2xl shadow-green-500/50">
+              ✓ Answer Submitted! Waiting for round to end...
+            </div>
+          )}
+        </>
       )}
     </div>
   );
