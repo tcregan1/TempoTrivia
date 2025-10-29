@@ -7,7 +7,7 @@ from database import Database
 import asyncio
 import re
 from difflib import SequenceMatcher
-
+from add_songs import get_spotify_client, get_artist_image_url
 app = FastAPI()
 
 rooms: Dict[str, Dict[str, List]] = {}
@@ -71,6 +71,39 @@ def get_mode_options():
     print(description)
     return name, description
 
+async def reveal_answer(room_code: str):
+    room = rooms.get(room_code)
+    if not room:
+        return
+
+    song = room.get("current_song")
+    if not song:
+        return
+
+    title = song.get("title", "")
+    artist = song.get("artist", "")
+
+    artist_image_url = None
+    try:
+        # WARNING: Spotipy is synchronous; this blocks the event loop.
+        # For production, offload: artist_image_url = await asyncio.to_thread(get_artist_image_url, sp, artist)
+        sp = get_spotify_client()
+        artist_image_url = await asyncio.to_thread(get_artist_image_url, sp, artist)
+        print(f"image url: {artist_image_url}")
+    except Exception as e:
+        print(f"Artist image lookup failed: {e}")
+
+    await broadcast_room(room_code, {
+        "type": "answer_reveal",
+        "payload": {
+            "title": title,
+            "artist": artist,
+            "artistImageUrl": artist_image_url  # key/value dict, not a set
+        }
+    })
+
+    
+
 async def start_round(room_code: str):
     room = rooms.get(room_code)
     if not room:
@@ -122,6 +155,8 @@ async def start_round(room_code: str):
 
 async def round_timer(room_code, duration):
     await asyncio.sleep(duration)
+    await reveal_answer(room_code)
+    await asyncio.sleep(5)
     await end_round(room_code)
 
 

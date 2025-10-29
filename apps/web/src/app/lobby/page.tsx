@@ -33,6 +33,7 @@ interface PlayingViewProps {
   songUrl: string;
   timeRemaining: number;
   onSubmitAnswer: (artist: string, title: string) => void;
+  reveal?: { title: string; artist: string; artistImageUrl?: string | null } | null;
 }
 
 interface LeaderboardViewProps {
@@ -78,6 +79,8 @@ export default function GameClient() {
   const [selectedGameMode, setSelectedGameMode] = useState<string>("");
   const [hostOnlyAudio, setHostOnlyAudio] = useState(false);
   const [isHostAudioMode, setIsHostAudioMode] = useState(false);
+  const [reveal, setReveal] = useState<{ title: string; artist: string; artistImageUrl?: string | null } | null>(null);
+
 
   useEffect(() => {
     if (!rc || !alias) return;
@@ -140,6 +143,7 @@ export default function GameClient() {
             break;
           }
           case "round_ended": {
+            setReveal(null);
             setLeaderboard(msg.payload?.leaderboard ?? []);
             setCurrentRound(msg.payload?.currentRound ?? 0);
             setTotalRounds(msg.payload?.totalRounds ?? 10);
@@ -155,6 +159,11 @@ export default function GameClient() {
             const hostOnly = msg.payload?.hostOnlyAudio ?? false;
             setHostOnlyAudio(hostOnly);
             console.log("Audio mode set to:", hostOnly ? "host-only" : "everyone");
+            break;
+          }
+          case "answer_reveal": {
+            const p = msg.payload;
+            setReveal({ title: p.title, artist: p.artist, artistImageUrl: p.artistImageUrl });
             break;
           }
           default:
@@ -246,6 +255,7 @@ export default function GameClient() {
           songUrl={songData.url}
           timeRemaining={timeRemaining}
           onSubmitAnswer={handleSubmitAnswer}
+          reveal = {reveal}
         />
       )}
       {gameState === "leaderboard" && (
@@ -652,7 +662,7 @@ function LeaderboardView({ leaderboard, currentRound, totalRounds, isHost, onNex
                      hover:to-blue-700 text-white text-xl font-bold rounded-xl transform 
                      hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-cyan-500/50"
         >
-          ▶️ Next Round
+            Next Round
         </button>
       ) : (
         <div className="text-center text-gray-400 py-4 bg-gray-800/30 rounded-xl border border-gray-700">

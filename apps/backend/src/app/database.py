@@ -2,6 +2,7 @@ import os
 from sqlite3 import Cursor 
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from urllib.parse import quote
 import random
 load_dotenv()
 
@@ -48,8 +49,10 @@ class Database:
     @staticmethod
     def search_songs(query):
         """Search songs by title or artist"""
+        # URL-encode the query to handle special characters like (), &, etc.
+        safe_query = quote(query, safe='')
         response = supabase.table("songs").select("*").or_(
-            f"title.ilike.%{query}%,artist.ilike.%{query}%"
+            f"title.ilike.%{safe_query}%,artist.ilike.%{safe_query}%"
         ).execute()
         return response.data
     @staticmethod
