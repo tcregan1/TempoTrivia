@@ -288,7 +288,6 @@ export default function GameClient() {
           timeRemaining={timeRemaining}
           onSubmitAnswer={handleSubmitAnswer}
           reveal={reveal}
-          answerResult={answerResult}
         />
       )}
       {gameState === "leaderboard" && (
@@ -558,11 +557,6 @@ function LobbyView({
                     ? "Launch the next round when you’re ready—everyone will see a five-second reveal window between rounds."
                     : "Hang tight while the host locks in settings and starts the game."}
                 </p>
-                {isHost && players.length === 1 && (
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.35em] text-emerald-200/80">
-                    Solo runs are welcome—start whenever you’re ready.
-                  </p>
-                )}
               </div>
 
               {isHost ? (
@@ -598,12 +592,11 @@ function LobbyView({
 
 
 // ---- Playing View ----
-function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal, answerResult }: PlayingViewProps) {
+function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal }: PlayingViewProps) {
   const [artistInput, setArtistInput] = useState("");
   const [songInput, setSongInput] = useState("");
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [revealCountdown, setRevealCountdown] = useState(0);
-  const [lastGuess, setLastGuess] = useState<{ artist: string; title: string } | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const isRevealPhase = Boolean(reveal);
@@ -623,13 +616,6 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal, answerRes
     setSongInput("");
     setLastGuess(null);
   }, [songUrl]);
-
-  useEffect(() => {
-    if (answerResult) {
-      setHasSubmitted(true);
-      setLastGuess({ artist: answerResult.artistGuess, title: answerResult.titleGuess });
-    }
-  }, [answerResult]);
 
   useEffect(() => {
     if (!isRevealPhase) {
@@ -658,15 +644,13 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal, answerRes
 
   const handleSubmit = () => {
     if (!artistInput || !songInput || hasSubmitted || isRevealPhase) return;
-    const artist = artistInput.trim();
-    const title = songInput.trim();
-    onSubmitAnswer(artist, title);
-    setLastGuess({ artist, title });
+    onSubmitAnswer(artistInput.trim(), songInput.trim());
     setHasSubmitted(true);
   };
 
   const ROUND_DURATION = 30;
   const progressPercentage = Math.min(100, Math.max(0, (timeRemaining / ROUND_DURATION) * 100));
+  const progressPercentage = (timeRemaining / 30) * 100;
   const revealProgress = (revealCountdown / REVEAL_DURATION) * 100;
   const canSubmit = Boolean(!isRevealPhase && artistInput && songInput && timeRemaining > 0 && !hasSubmitted);
 
@@ -733,11 +717,6 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal, answerRes
                     style={{ width: `${revealProgress}%` }}
                   />
                 </div>
-                <RevealFeedback
-                  hasSubmitted={hasSubmitted}
-                  answerResult={answerResult}
-                  lastGuess={lastGuess}
-                />
               </div>
             </div>
           </div>
@@ -796,6 +775,56 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal, answerRes
                   </span>
                 </label>
               </div>
+          <div className="flex justify-center gap-2 py-6">
+            <div className="h-8 w-2 animate-pulse rounded-full bg-cyan-500" style={{ animationDelay: "0ms" }}></div>
+            <div className="h-12 w-2 animate-pulse rounded-full bg-cyan-400" style={{ animationDelay: "150ms" }}></div>
+            <div className="h-6 w-2 animate-pulse rounded-full bg-cyan-500" style={{ animationDelay: "300ms" }}></div>
+            <div className="h-10 w-2 animate-pulse rounded-full bg-cyan-400" style={{ animationDelay: "450ms" }}></div>
+            <div className="h-8 w-2 animate-pulse rounded-full bg-cyan-500" style={{ animationDelay: "600ms" }}></div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-700 bg-gray-800/50 p-6 shadow-2xl backdrop-blur-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="font-medium text-gray-400">Time Remaining</span>
+              <span className={`text-5xl font-bold ${getTimerColor()} transition-colors duration-300`}>
+                {timeRemaining}s
+              </span>
+            </div>
+            <div className="h-6 w-full overflow-hidden rounded-full bg-gray-700 shadow-inner">
+              <div
+                className={`h-full bg-gradient-to-r ${getProgressColor()} shadow-lg transition-all duration-1000 ease-linear`}
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="relative">
+              <span className="absolute left-4 top-4 text-2xl">🎤</span>
+              <input
+                type="text"
+                value={artistInput}
+                onChange={(e) => setArtistInput(e.target.value)}
+                placeholder="Artist Name"
+                disabled={hasSubmitted}
+                className="w-full rounded-xl border-2 border-gray-700 bg-gray-800 pl-14 pr-4 py-4 text-lg text-white shadow-lg transition-all
+                       placeholder-gray-500 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/30
+                       disabled:cursor-not-allowed disabled:opacity-50 hover:border-gray-600 outline-none"
+              />
+            </div>
+
+            <div className="relative">
+              <span className="absolute left-4 top-4 text-2xl">🎵</span>
+              <input
+                type="text"
+                value={songInput}
+                onChange={(e) => setSongInput(e.target.value)}
+                placeholder="Song Title"
+                disabled={hasSubmitted}
+                className="w-full rounded-xl border-2 border-gray-700 bg-gray-800 pl-14 pr-4 py-4 text-lg text-white shadow-lg transition-all
+                       placeholder-gray-500 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/30
+                       disabled:cursor-not-allowed disabled:opacity-50 hover:border-gray-600 outline-none"
+              />
             </div>
           </div>
 
@@ -803,98 +832,18 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal, answerRes
             <button
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="group flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 px-8 py-4 text-lg font-semibold text-white shadow-[0_20px_60px_rgba(59,130,246,0.4)] transition-all hover:shadow-[0_24px_70px_rgba(59,130,246,0.55)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full transform rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 py-5 text-xl font-bold text-white shadow-2xl shadow-cyan-500/50 transition-all
+                     hover:scale-[1.02] hover:from-cyan-600 hover:to-blue-700 hover:shadow-cyan-500/70 active:scale-[0.98]
+                     disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <span className="text-xl transition-transform group-hover:translate-x-0.5">✨</span>
               Submit Answer
             </button>
           ) : (
-            <div className="flex w-full items-center justify-center gap-3 rounded-2xl border border-emerald-400/40 bg-emerald-400/15 px-6 py-5 text-lg font-semibold text-emerald-100 shadow-[0_15px_45px_rgba(16,185,129,0.35)]">
-              <span className="text-2xl">✅</span>
-              Answer locked in! Awaiting reveal…
+            <div className="w-full animate-pulse rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 p-5 text-center text-xl font-bold text-white shadow-2xl shadow-green-500/50">
+              ✓ Answer Submitted! Waiting for round to end...
             </div>
           )}
         </>
-      )}
-    </div>
-  );
-}
-
-interface RevealFeedbackProps {
-  hasSubmitted: boolean;
-  answerResult: AnswerResultPayload | null;
-  lastGuess: { artist: string; title: string } | null;
-}
-
-function RevealFeedback({ hasSubmitted, answerResult, lastGuess }: RevealFeedbackProps) {
-  if (!hasSubmitted) {
-    return (
-      <div className="mt-2 space-y-2 rounded-2xl border border-white/15 bg-white/5 p-5 text-left text-white/80 shadow-[0_12px_35px_rgba(148,163,184,0.25)]">
-        <div className="flex items-center gap-3 text-base font-semibold text-white/90">
-          <span className="text-2xl">⌛</span>
-          No answer submitted
-        </div>
-        <p className="text-sm text-white/70">You can still rack up points solo—jump back in when the next round drops.</p>
-      </div>
-    );
-  }
-
-  if (!answerResult) {
-    return (
-      <div className="mt-2 space-y-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/10 p-5 text-left text-cyan-100 shadow-[0_12px_35px_rgba(6,182,212,0.25)]">
-        <div className="flex items-center gap-3 text-base font-semibold">
-          <span className="text-2xl">📡</span>
-          Checking your answer…
-        </div>
-        <p className="text-sm text-cyan-100/80">Hang tight—your results arrive the moment the host wraps the timer.</p>
-      </div>
-    );
-  }
-
-  const { artistCorrect, titleCorrect, bothCorrect, scoreAwarded } = answerResult;
-
-  let containerClasses = "mt-2 space-y-3 rounded-2xl p-5 text-left";
-  let badgeClasses = "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.35em]";
-  let icon = "";
-  let headline = "";
-  let description = "";
-
-  if (bothCorrect) {
-    containerClasses += " border border-emerald-400/60 bg-emerald-400/10 text-emerald-100 shadow-[0_18px_45px_rgba(16,185,129,0.35)]";
-    badgeClasses += " bg-emerald-400/20 text-emerald-100";
-    icon = "🌟";
-    headline = "Perfect guess!";
-    description = scoreAwarded > 0
-      ? `You nailed both the artist and title for +${scoreAwarded} points.`
-      : "You nailed both the artist and title!";
-  } else if (artistCorrect || titleCorrect) {
-    containerClasses += " border border-amber-400/60 bg-amber-400/10 text-amber-100 shadow-[0_18px_45px_rgba(251,191,36,0.3)]";
-    badgeClasses += " bg-amber-400/20 text-amber-900";
-    icon = "🎯";
-    const matched = [artistCorrect ? "artist" : null, titleCorrect ? "title" : null].filter(Boolean).join(" & ");
-    headline = "So close!";
-    description = scoreAwarded > 0
-      ? `You matched the ${matched} for +${scoreAwarded} points. Finish the pair next time for a full bonus.`
-      : `You matched the ${matched}. Lock both in next round for a big score boost.`;
-  } else {
-    containerClasses += " border border-rose-400/60 bg-rose-400/10 text-rose-100 shadow-[0_18px_45px_rgba(244,63,94,0.35)]";
-    badgeClasses += " bg-rose-400/20 text-rose-900";
-    icon = "💥";
-    headline = "Not quite this time";
-    description = "No worries—keep the streak alive next round.";
-  }
-
-  return (
-    <div className={containerClasses}>
-      <div className="flex flex-wrap items-center gap-3 text-base font-semibold">
-        <span className="text-2xl">{icon}</span>
-        <span>{headline}</span>
-        <span className={badgeClasses}>{scoreAwarded > 0 ? `+${scoreAwarded} pts` : "0 pts"}</span>
-      </div>
-      {lastGuess && (
-        <p className="text-sm text-white/80">
-          <span className="font-semibold text-white">Your guess:</span> {lastGuess.artist || "—"} — “{lastGuess.title || "—"}”
-        </p>
       )}
       <p className="text-sm opacity-90">{description}</p>
     </div>
