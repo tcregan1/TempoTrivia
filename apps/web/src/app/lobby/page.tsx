@@ -620,6 +620,8 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal }: Playing
     setHasSubmitted(true);
   };
 
+  const ROUND_DURATION = 30;
+  const progressPercentage = Math.min(100, Math.max(0, (timeRemaining / ROUND_DURATION) * 100));
   const progressPercentage = (timeRemaining / 30) * 100;
   const revealProgress = (revealCountdown / REVEAL_DURATION) * 100;
   const canSubmit = Boolean(!isRevealPhase && artistInput && songInput && timeRemaining > 0 && !hasSubmitted);
@@ -693,6 +695,58 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal }: Playing
         </div>
       ) : (
         <>
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/70 via-slate-900/40 to-cyan-900/40 p-8 shadow-[0_20px_60px_rgba(14,165,233,0.35)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(6,182,212,0.18),_transparent_55%)]" />
+            <div className="relative flex flex-col gap-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.35em] text-cyan-100/70">Time Remaining</p>
+                  <span className={`text-5xl font-bold ${getTimerColor()} transition-colors duration-300`}>{timeRemaining}s</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-white/70">
+                  <span className="inline-flex h-2 w-2 animate-ping rounded-full bg-cyan-400" aria-hidden="true" />
+                  Guess before the beat drops!
+                </div>
+              </div>
+
+              <div className="h-4 w-full overflow-hidden rounded-full border border-white/10 bg-white/10">
+                <div
+                  className={`h-full rounded-full bg-gradient-to-r ${getProgressColor()} shadow-[0_0_25px_rgba(56,189,248,0.45)] transition-all duration-700 ease-linear`}
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="group relative flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm font-medium text-white/70 transition-all focus-within:border-cyan-400/80 focus-within:bg-cyan-400/10">
+                  <span className="text-xs uppercase tracking-[0.35em] text-white/50">Artist</span>
+                  <input
+                    type="text"
+                    value={artistInput}
+                    onChange={(e) => setArtistInput(e.target.value)}
+                    placeholder="Who’s performing?"
+                    disabled={hasSubmitted}
+                    className="w-full bg-transparent text-lg font-semibold text-white placeholder:text-white/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                  <span className="pointer-events-none absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 text-xl text-white shadow-[0_8px_24px_rgba(14,165,233,0.4)]">
+                    🎤
+                  </span>
+                </label>
+
+                <label className="group relative flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm font-medium text-white/70 transition-all focus-within:border-cyan-400/80 focus-within:bg-cyan-400/10">
+                  <span className="text-xs uppercase tracking-[0.35em] text-white/50">Song Title</span>
+                  <input
+                    type="text"
+                    value={songInput}
+                    onChange={(e) => setSongInput(e.target.value)}
+                    placeholder="Name that track"
+                    disabled={hasSubmitted}
+                    className="w-full bg-transparent text-lg font-semibold text-white placeholder:text-white/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                  <span className="pointer-events-none absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-500 text-xl text-white shadow-[0_8px_24px_rgba(192,132,252,0.4)]">
+                    🎵
+                  </span>
+                </label>
+              </div>
           <div className="flex justify-center gap-2 py-6">
             <div className="h-8 w-2 animate-pulse rounded-full bg-cyan-500" style={{ animationDelay: "0ms" }}></div>
             <div className="h-12 w-2 animate-pulse rounded-full bg-cyan-400" style={{ animationDelay: "150ms" }}></div>
