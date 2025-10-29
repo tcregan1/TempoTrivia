@@ -53,13 +53,13 @@ class Database:
         ).execute()
         return response.data
     @staticmethod
-    def create_song(title, artist, preview_url, spotify_track_id=None):
+    def create_song(title, artist, preview_url, deezer_track_id):
         """Create a new song"""
         data = {
             "title": title,
             "artist": artist,
             "preview_url": preview_url,
-            "spotify_track_id": spotify_track_id,
+            "deezer_track_id": deezer_track_id,
         }
         response = supabase.table("songs").insert(data).execute()
         return response.data

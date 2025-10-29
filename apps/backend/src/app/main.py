@@ -5,6 +5,8 @@ import aiohttp
 import time
 from database import Database
 import asyncio
+import re
+from difflib import SequenceMatcher
 
 app = FastAPI()
 
@@ -123,27 +125,66 @@ async def round_timer(room_code, duration):
     await end_round(room_code)
 
 
-def check_answer(artist_guess, title_guess, artist, title) -> str:   
-    def normalize(text):
-        return ''.join(text.lower().split())
-
-    artist_guess = normalize(artist_guess)
-    title_guess = normalize(title_guess)
-    artist = normalize(artist)
-    title = normalize(title)
+def check_answer(artist_guess, title_guess, artist, title) -> dict:
+    """
+    Check if answer is correct with 80% fuzzy matching threshold.
     
+    Returns:
+        dict: {
+            'artist_correct': bool,
+            'title_correct': bool,
+            'both_correct': bool
+        }
+    """
+    
+    def normalize(text):
+        """Clean up text by removing remasters, punctuation, etc."""
+        text = text.lower()
+        
+        # Remove parentheses and brackets content
+        text = re.sub(r'\([^)]*\)', '', text)  # (Remastered 2009)
+        text = re.sub(r'\[[^\]]*\]', '', text)  # [Remaster]
+        
+        # Remove "- Remastered" suffixes
+        text = re.sub(r'\s*-\s*remaster(ed)?.*', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'\s*-\s*\d{4}.*', '', text)  # - 2009
+        
+        # Remove all punctuation
+        text = re.sub(r'[^\w\s]', '', text)
+        
+        # Clean up whitespace
+        text = ' '.join(text.split())
+        
+        return text.strip()
+    
+    def similarity(guess, actual):
+        """Calculate similarity score between 0 and 1"""
+        return SequenceMatcher(None, guess, actual).ratio()
+    
+    # Normalize and compare
+    artist_score = similarity(normalize(artist_guess), normalize(artist))
+    title_score = similarity(normalize(title_guess), normalize(title))
+    
+    # Check which ones are at least 80%
+    artist_correct = artist_score >= 0.80
+    title_correct = title_score >= 0.80
+    both_correct = artist_correct and title_correct
+    
+    return {
+        'artist_correct': artist_correct,
+        'title_correct': title_correct,
+        'both_correct': both_correct
+    }
 
-    if artist_guess == artist and title_guess == title:
-        print("ARTIST and TITLE CORRECT")
-        return "artist and title"
-    elif artist_guess == artist:
-        print("Only Artist Correct")
-        return "artist"
-    elif title_guess == title:
-        print("Only Title Correct")
-        return "title"
-    else:
-        return "none"
+
+def update_player_score(room, player_id, points):
+    """Add points to a player's score"""
+    for player in room["players"]:
+        if player["id"] == player_id:
+            player["score"] += points
+            print(f"Player score = {player["score"]}")
+            return
+        
     
 async def end_round(room_code):
     room = rooms.get(room_code)
@@ -309,27 +350,22 @@ async def ws_endpoint(ws: WebSocket):
                     return
                 result = check_answer(artist, title, song["artist"], song["title"])
                 print(f"Result:{result}")
-                if result == "artist and title":
+                if result['both_correct']:
                     base_score = 1000
-                    speed_penalty = (elapsed * 10)
-                    score = max(base_score - speed_penalty, 100)
-                    score = int(round(score, 10))
-                    for player in room["players"]:
-                        if player["id"] == player_id:
-                            player["score"] += score
-                            break
-                        
-                elif result == "title" or result == "artist":
+                    min_score = 100                       
+                elif result['title_correct'] or result['artist_correct']:
                     base_score = 500
+                    min_score = 50 
+                else:
+                    base_score = 0
+                    min_score = 0
+                if base_score > 0:
                     speed_penalty = (elapsed * 10)
-                    score = max(base_score - speed_penalty, 50)
+                    score = max(base_score - speed_penalty, min_score)
                     score = int(round(score,10))
-                    for player in room["players"]:
-                        if player["id"] == player_id:
-                            player["score"] += score
-                            break
+                    update_player_score(room, player_id, score)
                 
-                print(f"Player score = {player["score"]}")
+                
                 await ws.send_text(json.dumps({
                     "type": "answer_received",
                     "payload": {"artist": artist, "title": title}

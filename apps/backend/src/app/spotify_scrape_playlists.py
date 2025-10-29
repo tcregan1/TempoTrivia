@@ -16,18 +16,17 @@ auth_manager = SpotifyOAuth(
 )
 sp = spotipy.Spotify(auth_manager=auth_manager)
 client = deezer.Client()
-playlists = sp.current_user_playlists(limit=30, offset=0)
+playlists = sp.current_user_playlists(limit=5, offset=0)
 
 #for i, playlist in enumerate(playlists['items']):
- #   print(f"{i + 1} {playlist['uri']} {playlist['name']}")
+#    print(f"{i + 1} {playlist['uri']} {playlist['name']}")
     
 #print(playlists['items'][3])
 
 
-playlist = playlists['items'][9]
+playlist = playlists['items'][3]
 tracks = sp.playlist_tracks(playlist['id'])
-songs_to_search = []
-songs_data = []
+song_list = []
 
 
 for i, item in enumerate(tracks['items']):
@@ -36,22 +35,26 @@ for i, item in enumerate(tracks['items']):
             "artist": track['artists'][0]['name'],
             "title": track['name']
     }
-    songs_to_search.append(song_info)
-    
+    song_list.append(song_info)
 
-for song_info in songs_to_search:
-    search_query = f"{song_info['title']} {song_info['artist']}"
+
+songs_data = []
+
+
+for song_info  in song_list:
     try:
-        
+        search_query = f"{song_info['title']} {song_info['artist']}"
+        print(f"Searching for: {search_query}")
+        # Search for the song
         results = client.search(search_query)
         
         if results:
-            track = results[0]  
+            track = results[0]  # Get first result
             
             title = track.title
             artist = track.artist.name
             preview_url = track.preview
-            deezer_id = track.id
+            deezer_track_id = track.id
             duration = track.duration
             
             # Store the data
@@ -59,7 +62,7 @@ for song_info in songs_to_search:
                 'title': title,
                 'artist': artist,
                 'preview_url': preview_url,
-                'deezer_id': deezer_id,
+                'deezer_track_id': deezer_track_id,
                 'duration_seconds': 30
             }
             songs_data.append(song_data)
@@ -67,7 +70,7 @@ for song_info in songs_to_search:
             # Print results
             print(f"  {title} - {artist}")
             print(f"  Preview: {preview_url}")
-            print(f"  Deezer ID: {deezer_id}")
+            print(f"  Deezer ID: {deezer_track_id}")
             print(f"  Duration: {duration}s")
             print("-"*80)
         else:
@@ -75,7 +78,7 @@ for song_info in songs_to_search:
             print("-"*80)
             
     except Exception as e:
-        print(f"✗ Error searching '{search_query}': {e}")
+        print(f"✗ Error searching")
         print("-"*80)
 
 print(f"\nFound {len(songs_data)} songs with previews")
@@ -86,45 +89,45 @@ print("="*80 + "\n")
 
 added = 0
 skipped = 0
-inserted_song_ids = []
 
 for song in songs_data:
     try:
+        # Check if song already exists (avoid duplicates)
         existing = Database.search_songs(song['title'])
         
         if existing and any(s['artist'].lower() == song['artist'].lower() for s in existing):
             print(f"Skipped (already exists): {song['title']} - {song['artist']}")
             skipped += 1
-            existing_song = next((s for s in existing if s['artist'].lower() == song['artist'].lower()), None)
-            if existing_song:
-                inserted_song_ids.append(existing_song['id'])
         else:
+            # Add to database
             result = Database.create_song(
                 title=song['title'],
                 artist=song['artist'],
                 preview_url=song['preview_url'],
-                deezer_track_id=str(song['deezer_id']),
+                deezer_track_id=str(song['deezer_track_id']),  # Store Deezer ID here
             )
-            print(f"Added: {song['title']} - {song['artist']}")
+            print(f"✓ Added: {song['title']} - {song['artist']}")
             added += 1
-            if result and len(result) > 0:
-                inserted_song_ids.append(result[0]['id'])
             
     except Exception as e:
-        print(f"Error adding {song['title']}: {e}")
+        print(f"Error adding '{song['title']}': {e}")
 
-print("\nComplete!")
-print(f"Added: {added}")
-print(f"Skipped: {skipped}")
+print("\n" + "="*80)
+print(f"✓ Complete!")
+print(f"  Added: {added}")
+print(f"  Skipped: {skipped}")
+print("="*80)
 
-print("\nAdding songs to Normal Mode playlist...")
+# Now add them to the default "Normal Mode" playlist
+print("\nAdding songs to 'Normal Mode' playlist...")
 
 try:
+    # Get the default playlist (or create it if it doesn't exist)
     playlists = Database.get_all_playlists()
     default_playlist = next((p for p in playlists if p.get('is_default')), None)
     
     if not default_playlist:
-        print("Creating Normal Mode playlist...")
+        print("Creating 'Normal Mode' playlist...")
         default_playlist = Database.create_playlist(
             name="Normal Mode",
             is_default=True,
@@ -134,25 +137,37 @@ try:
     else:
         print(f"Found playlist (ID: {default_playlist['id']})")
     
+    # Get all songs from database
+    all_songs = []
+    for song in songs_data:
+        results = Database.search_songs(song['title'])
+        if results:
+            matching = next((s for s in results if s['artist'].lower() == song['artist'].lower()), None)
+            if matching:
+                all_songs.append(matching)
+    
+    # Add each song to the playlist
     linked = 0
-    for song_id in inserted_song_ids:
+    for song in all_songs:
         try:
             Database.add_song_to_playlist(
                 playlist_id=default_playlist['id'],
-                song_id=song_id
+                song_id=song['id']
             )
-            print(f"Linked song ID: {song_id}")
+            print(f"  ✓ Linked: {song['title']}")
             linked += 1
         except Exception as e:
+            # Might already be linked, that's okay
             if "duplicate" in str(e).lower() or "unique" in str(e).lower():
-                print(f"Already linked: {song_id}")
+                print(f"Already linked: {song['title']}")
             else:
-                print(f"Error linking song {song_id}: {e}")
+                print(f"Error linking '{song['title']}': {e}")
     
-    print(f"\nLinked {linked} songs to Normal Mode playlist")
+    print(f"\n✓ Linked {linked} songs to 'Normal Mode' playlist")
     
 except Exception as e:
     print(f"Error with playlist: {e}")
 
-print("\nYour database is ready!")
-    
+print("\n" + "="*80)
+print("Your database is ready!")
+print("="*80)
