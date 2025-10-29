@@ -368,12 +368,13 @@ async def ws_endpoint(ws: WebSocket):
 
 
             elif msg_type == "submit_answer":
-                
-                elapsed = time.time() - room["round_start_time"]
                 room = rooms.get(room_code)
                 if not room:
                     print(f"Room {room_code} not found.")
                     return
+
+                round_start = room.get("round_start_time") or time.time()
+                elapsed = time.time() - round_start
                 artist = payload.get("artist", "").strip()
                 title = payload.get("title", "").strip()
                 print(f" Answer from {player_id}: {artist} - {title}")
@@ -385,25 +386,32 @@ async def ws_endpoint(ws: WebSocket):
                     return
                 result = check_answer(artist, title, song["artist"], song["title"])
                 print(f"Result:{result}")
+                score_awarded = 0
+
                 if result['both_correct']:
                     base_score = 1000
-                    min_score = 100                       
+                    min_score = 100
                 elif result['title_correct'] or result['artist_correct']:
                     base_score = 500
-                    min_score = 50 
+                    min_score = 50
                 else:
                     base_score = 0
                     min_score = 0
                 if base_score > 0:
                     speed_penalty = (elapsed * 10)
                     score = max(base_score - speed_penalty, min_score)
-                    score = int(round(score,10))
-                    update_player_score(room, player_id, score)
-                
-                
+                    score_awarded = int(round(score, 0))
+                    update_player_score(room, player_id, score_awarded)
+
+
                 await ws.send_text(json.dumps({
                     "type": "answer_received",
-                    "payload": {"artist": artist, "title": title}
+                    "payload": {
+                        "artist": artist,
+                        "title": title,
+                        "result": result,
+                        "scoreAwarded": score_awarded
+                    }
                 }))
             elif msg_type == "next_round":
                 room = rooms.get(room_code)
@@ -416,14 +424,14 @@ async def ws_endpoint(ws: WebSocket):
                 room = rooms.get(room_code)
                 if player_id != room.get("host_id"):
                     continue
-    
-            host_only = payload.get("hostOnly", False)
-            room["host_only_audio"] = host_only
-    
-            await broadcast_room(room_code, {
-                "type": "audio_mode_set",
-                "payload": {"hostOnlyAudio": host_only}
-            })
+
+                host_only = payload.get("hostOnly", False)
+                room["host_only_audio"] = host_only
+
+                await broadcast_room(room_code, {
+                    "type": "audio_mode_set",
+                    "payload": {"hostOnlyAudio": host_only}
+                })
 
     except WebSocketDisconnect:
         print(f" Player {player_id} disconnected")
