@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 // ---- Types ----
@@ -23,6 +23,7 @@ interface LobbyViewProps {
   myPlayerId: string;
   hostId: string;
   gameModes: string[];
+  modeDescriptions: string[];
   selectedMode: string;
   onSelectMode: (modeName: string) => void;
   hostOnlyAudio: boolean;
@@ -75,7 +76,7 @@ function GameLayout({ children }: { children: React.ReactNode }) {
 }
 
 // ---- Main Game Client ----
-export default function GameClient() {
+function GameClient() {
   const [gameState, setGameState] = useState<GameState>("lobby");
   const [players, setPlayers] = useState<Player[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
@@ -88,12 +89,11 @@ export default function GameClient() {
   const rc = params.get("roomcode") ?? "";
   const alias = params.get("nickname") ?? "";
   const [hostId, setHostId] = useState<string>("");
-  const [myPlayerId, setMyPlayerId] = useState<string>("")
-  const [gameModes, setGameModes] = useState<string[]>([])
-  const [modeDescriptions, setDescriptions] = useState<string[]>([])
+  const [myPlayerId, setMyPlayerId] = useState<string>("");
+  const [gameModes, setGameModes] = useState<string[]>([]);
+  const [modeDescriptions, setModeDescriptions] = useState<string[]>([]);
   const [selectedGameMode, setSelectedGameMode] = useState<string>("");
   const [hostOnlyAudio, setHostOnlyAudio] = useState(false);
-  const [isHostAudioMode, setIsHostAudioMode] = useState(false);
   const [reveal, setReveal] = useState<{ title: string; artist: string; artistImageUrl?: string | null } | null>(null);
   const [answerResult, setAnswerResult] = useState<AnswerResultPayload | null>(null);
 
@@ -127,10 +127,16 @@ export default function GameClient() {
             break;
           }
           case "game_modes": {
-            console.log("Received Game_modes")
-            setGameModes(msg.payload?.name || []);
-            setDescriptions(msg.payload?.description || []);
-            break; 
+            console.log("Received Game_modes");
+            const names = Array.isArray(msg.payload?.name)
+              ? msg.payload.name
+              : [];
+            const descriptions = Array.isArray(msg.payload?.description)
+              ? msg.payload.description
+              : [];
+            setGameModes(names);
+            setModeDescriptions(descriptions);
+            break;
           }
           case "game_state_changed": {
             console.log("Game state changed")
@@ -140,15 +146,14 @@ export default function GameClient() {
           }
           case "room_state": {
             setPlayers(msg.payload?.players ?? []);
-            setHostId(msg.payload?.hostId || "")
-            setSelectedGameMode(msg.payload?.selectedMode || "")
+            setHostId(msg.payload?.hostId || "");
+            setSelectedGameMode(msg.payload?.selectedMode || "");
             break;
           }
           case "round_started": {
             const sd = msg.payload?.songData ?? { url: "", title: "", artist: "" };
             setSongData(sd);
             setTimeRemaining(msg.payload?.duration ?? 30);
-            setIsHostAudioMode(msg.payload?.isHost === false);
             setGameState("playing");
             setReveal(null);
             setAnswerResult(null);
@@ -156,7 +161,6 @@ export default function GameClient() {
           }
           case "mode_selected": {
             console.log("Received Mode Selection Update");
-            setDescriptions([]);
             setSelectedGameMode(msg.payload?.selectedMode || "");
             break;
           }
@@ -223,8 +227,8 @@ export default function GameClient() {
     send("select_game_mode", { roomCode: rc, mode: modeName });
   };
   const handleAudioModeToggle = (hostOnly: boolean) => {
-  setHostOnlyAudio(hostOnly);
-  send("set_audio_mode", { hostOnly });
+    setHostOnlyAudio(hostOnly);
+    send("set_audio_mode", { hostOnly });
   };
 
   useEffect(() => {
@@ -270,14 +274,15 @@ export default function GameClient() {
     <GameLayout>
       {gameState === "lobby" && (
         <LobbyView 
-          players={players} 
-          roomCode={rc} 
-          onStart={handleStartGame} 
-          myPlayerId={myPlayerId} 
-          hostId={hostId} 
-          gameModes={gameModes} 
-          selectedMode={selectedGameMode} 
-          onSelectMode={handleSelectMode} 
+          players={players}
+          roomCode={rc}
+          onStart={handleStartGame}
+          myPlayerId={myPlayerId}
+          hostId={hostId}
+          gameModes={gameModes}
+          modeDescriptions={modeDescriptions}
+          selectedMode={selectedGameMode}
+          onSelectMode={handleSelectMode}
           hostOnlyAudio={hostOnlyAudio}
           onAudioModeToggle={handleAudioModeToggle}
         />
@@ -288,6 +293,7 @@ export default function GameClient() {
           timeRemaining={timeRemaining}
           onSubmitAnswer={handleSubmitAnswer}
           reveal={reveal}
+          answerResult={answerResult}
         />
       )}
       {gameState === "leaderboard" && (
@@ -306,14 +312,15 @@ export default function GameClient() {
   );
 }
 
-function LobbyView({ 
-  players, 
-  roomCode, 
-  onStart, 
-  myPlayerId, 
-  hostId, 
-  gameModes, 
-  selectedMode, 
+function LobbyView({
+  players,
+  roomCode,
+  onStart,
+  myPlayerId,
+  hostId,
+  gameModes,
+  modeDescriptions,
+  selectedMode,
   onSelectMode,
   hostOnlyAudio,
   onAudioModeToggle
@@ -430,6 +437,30 @@ function LobbyView({
                           <div className="h-1 bg-gradient-to-r from-fuchsia-400 via-purple-500 to-cyan-400" />
                           <ul role="listbox" className="max-h-64 overflow-auto divide-y divide-white/5">
                             {gameModes.length > 0 ? (
+                              gameModes.map((modeName, index) => {
+                                const description = modeDescriptions[index] ?? "";
+                                return (
+                                  <li key={modeName}>
+                                    <button
+                                      role="option"
+                                      onClick={() => handleModeSelection(modeName)}
+                                      className="flex w-full items-start justify-between gap-4 px-6 py-4 text-left text-white transition-colors hover:bg-white/10"
+                                    >
+                                      <span className="font-medium">
+                                        🎵 {modeName}
+                                        {description && (
+                                          <span className="mt-2 block text-sm font-normal text-white/60">
+                                            {description}
+                                          </span>
+                                        )}
+                                      </span>
+                                      <span className="text-xs uppercase tracking-[0.3em] text-white/40">
+                                        Select
+                                      </span>
+                                    </button>
+                                  </li>
+                                );
+                              })
                               gameModes.map((modeName) => (
                                 <li key={modeName}>
                                   <button
@@ -482,6 +513,30 @@ function LobbyView({
                           <div className="h-1 bg-gradient-to-r from-fuchsia-400 via-purple-500 to-cyan-400" />
                           <ul role="listbox" className="max-h-64 overflow-auto divide-y divide-white/5">
                             {gameModes.length > 0 ? (
+                              gameModes.map((modeName, index) => {
+                                const description = modeDescriptions[index] ?? "";
+                                return (
+                                  <li key={modeName}>
+                                    <button
+                                      role="option"
+                                      onClick={() => handleModeSelection(modeName)}
+                                      className="flex w-full items-start justify-between gap-4 px-6 py-4 text-left text-white transition-colors hover:bg-white/10"
+                                    >
+                                      <span className="font-medium">
+                                        🎵 {modeName}
+                                        {description && (
+                                          <span className="mt-2 block text-sm font-normal text-white/60">
+                                            {description}
+                                          </span>
+                                        )}
+                                      </span>
+                                      <span className="text-xs uppercase tracking-[0.3em] text-white/40">
+                                        Select
+                                      </span>
+                                    </button>
+                                  </li>
+                                );
+                              })
                               gameModes.map((modeName) => (
                                 <li key={modeName}>
                                   <button
@@ -557,6 +612,11 @@ function LobbyView({
                     ? "Launch the next round when you’re ready—everyone will see a five-second reveal window between rounds."
                     : "Hang tight while the host locks in settings and starts the game."}
                 </p>
+                {isHost && players.length === 1 && (
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.35em] text-emerald-200/80">
+                    Solo runs are welcome—start whenever you’re ready.
+                  </p>
+                )}
               </div>
 
               {isHost ? (
@@ -592,11 +652,13 @@ function LobbyView({
 
 
 // ---- Playing View ----
+function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal, answerResult }: PlayingViewProps) {
 function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal }: PlayingViewProps) {
   const [artistInput, setArtistInput] = useState("");
   const [songInput, setSongInput] = useState("");
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [revealCountdown, setRevealCountdown] = useState(0);
+  const [lastGuess, setLastGuess] = useState<{ artist: string; title: string } | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const isRevealPhase = Boolean(reveal);
@@ -616,6 +678,13 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal }: Playing
     setSongInput("");
     setLastGuess(null);
   }, [songUrl]);
+
+  useEffect(() => {
+    if (answerResult) {
+      setHasSubmitted(true);
+      setLastGuess({ artist: answerResult.artistGuess, title: answerResult.titleGuess });
+    }
+  }, [answerResult]);
 
   useEffect(() => {
     if (!isRevealPhase) {
@@ -644,6 +713,10 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal }: Playing
 
   const handleSubmit = () => {
     if (!artistInput || !songInput || hasSubmitted || isRevealPhase) return;
+    const artist = artistInput.trim();
+    const title = songInput.trim();
+    onSubmitAnswer(artist, title);
+    setLastGuess({ artist, title });
     onSubmitAnswer(artistInput.trim(), songInput.trim());
     setHasSubmitted(true);
   };
@@ -705,6 +778,180 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal }: Playing
                 {reveal?.artist}
               </h2>
               <p className="mt-3 text-2xl font-semibold text-purple-100">“{reveal?.title}”</p>
+
+              <div className="mt-6 space-y-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium text-purple-100/90 backdrop-blur">
+                  <span className="text-lg">⏱️</span>
+                  {revealCountdown > 0 ? `Next round in ${revealCountdown}s` : "Get ready for the next round!"}
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400 transition-all duration-700 ease-out"
+                    style={{ width: `${revealProgress}%` }}
+                  />
+                </div>
+                <RevealFeedback
+                  hasSubmitted={hasSubmitted}
+                  answerResult={answerResult}
+                  lastGuess={lastGuess}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/70 via-slate-900/40 to-cyan-900/40 p-8 shadow-[0_20px_60px_rgba(14,165,233,0.35)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(6,182,212,0.18),_transparent_55%)]" />
+            <div className="relative flex flex-col gap-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.35em] text-cyan-100/70">Time Remaining</p>
+                  <span className={`text-5xl font-bold ${getTimerColor()} transition-colors duration-300`}>{timeRemaining}s</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-white/70">
+                  <span className="inline-flex h-2 w-2 animate-ping rounded-full bg-cyan-400" aria-hidden="true" />
+                  Guess before the beat drops!
+                </div>
+              </div>
+
+              <div className="h-4 w-full overflow-hidden rounded-full border border-white/10 bg-white/10">
+                <div
+                  className={`h-full rounded-full bg-gradient-to-r ${getProgressColor()} shadow-[0_0_25px_rgba(56,189,248,0.45)] transition-all duration-700 ease-linear`}
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="group relative flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm font-medium text-white/70 transition-all focus-within:border-cyan-400/80 focus-within:bg-cyan-400/10">
+                  <span className="text-xs uppercase tracking-[0.35em] text-white/50">Artist</span>
+                  <input
+                    type="text"
+                    value={artistInput}
+                    onChange={(e) => setArtistInput(e.target.value)}
+                    placeholder="Who’s performing?"
+                    disabled={hasSubmitted}
+                    className="w-full bg-transparent text-lg font-semibold text-white placeholder:text-white/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                  <span className="pointer-events-none absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 text-xl text-white shadow-[0_8px_24px_rgba(14,165,233,0.4)]">
+                    🎤
+                  </span>
+                </label>
+
+                <label className="group relative flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm font-medium text-white/70 transition-all focus-within:border-cyan-400/80 focus-within:bg-cyan-400/10">
+                  <span className="text-xs uppercase tracking-[0.35em] text-white/50">Song Title</span>
+                  <input
+                    type="text"
+                    value={songInput}
+                    onChange={(e) => setSongInput(e.target.value)}
+                    placeholder="Name that track"
+                    disabled={hasSubmitted}
+                    className="w-full bg-transparent text-lg font-semibold text-white placeholder:text-white/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                  <span className="pointer-events-none absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-500 text-xl text-white shadow-[0_8px_24px_rgba(192,132,252,0.4)]">
+                    🎵
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {!hasSubmitted ? (
+            <button
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className="group flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 px-8 py-4 text-lg font-semibold text-white shadow-[0_20px_60px_rgba(59,130,246,0.4)] transition-all hover:shadow-[0_24px_70px_rgba(59,130,246,0.55)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="text-xl transition-transform group-hover:translate-x-0.5">✨</span>
+              Submit Answer
+            </button>
+          ) : (
+            <div className="flex w-full items-center justify-center gap-3 rounded-2xl border border-emerald-400/40 bg-emerald-400/15 px-6 py-5 text-lg font-semibold text-emerald-100 shadow-[0_15px_45px_rgba(16,185,129,0.35)]">
+              <span className="text-2xl">✅</span>
+              Answer locked in! Awaiting reveal…
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+interface RevealFeedbackProps {
+  hasSubmitted: boolean;
+  answerResult: AnswerResultPayload | null;
+  lastGuess: { artist: string; title: string } | null;
+}
+
+function RevealFeedback({ hasSubmitted, answerResult, lastGuess }: RevealFeedbackProps) {
+  if (!hasSubmitted) {
+    return (
+      <div className="mt-2 space-y-2 rounded-2xl border border-white/15 bg-white/5 p-5 text-left text-white/80 shadow-[0_12px_35px_rgba(148,163,184,0.25)]">
+        <div className="flex items-center gap-3 text-base font-semibold text-white/90">
+          <span className="text-2xl">⌛</span>
+          No answer submitted
+        </div>
+        <p className="text-sm text-white/70">You can still rack up points solo—jump back in when the next round drops.</p>
+      </div>
+    );
+  }
+
+  if (!answerResult) {
+    return (
+      <div className="mt-2 space-y-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/10 p-5 text-left text-cyan-100 shadow-[0_12px_35px_rgba(6,182,212,0.25)]">
+        <div className="flex items-center gap-3 text-base font-semibold">
+          <span className="text-2xl">📡</span>
+          Checking your answer…
+        </div>
+        <p className="text-sm text-cyan-100/80">Hang tight—your results arrive the moment the host wraps the timer.</p>
+      </div>
+    );
+  }
+
+  const { artistCorrect, titleCorrect, bothCorrect, scoreAwarded } = answerResult;
+
+  let containerClasses = "mt-2 space-y-3 rounded-2xl p-5 text-left";
+  let badgeClasses = "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.35em]";
+  let icon = "";
+  let headline = "";
+  let description = "";
+
+  if (bothCorrect) {
+    containerClasses += " border border-emerald-400/60 bg-emerald-400/10 text-emerald-100 shadow-[0_18px_45px_rgba(16,185,129,0.35)]";
+    badgeClasses += " bg-emerald-400/20 text-emerald-100";
+    icon = "🌟";
+    headline = "Perfect guess!";
+    description = scoreAwarded > 0
+      ? `You nailed both the artist and title for +${scoreAwarded} points.`
+      : "You nailed both the artist and title!";
+  } else if (artistCorrect || titleCorrect) {
+    containerClasses += " border border-amber-400/60 bg-amber-400/10 text-amber-100 shadow-[0_18px_45px_rgba(251,191,36,0.3)]";
+    badgeClasses += " bg-amber-400/20 text-amber-900";
+    icon = "🎯";
+    const matched = [artistCorrect ? "artist" : null, titleCorrect ? "title" : null].filter(Boolean).join(" & ");
+    headline = "So close!";
+    description = scoreAwarded > 0
+      ? `You matched the ${matched} for +${scoreAwarded} points. Finish the pair next time for a full bonus.`
+      : `You matched the ${matched}. Lock both in next round for a big score boost.`;
+  } else {
+    containerClasses += " border border-rose-400/60 bg-rose-400/10 text-rose-100 shadow-[0_18px_45px_rgba(244,63,94,0.35)]";
+    badgeClasses += " bg-rose-400/20 text-rose-900";
+    icon = "💥";
+    headline = "Not quite this time";
+    description = "No worries—keep the streak alive next round.";
+  }
+
+  return (
+    <div className={containerClasses}>
+      <div className="flex flex-wrap items-center gap-3 text-base font-semibold">
+        <span className="text-2xl">{icon}</span>
+        <span>{headline}</span>
+        <span className={badgeClasses}>{scoreAwarded > 0 ? `+${scoreAwarded} pts` : "0 pts"}</span>
+      </div>
+      {lastGuess && (
+        <p className="text-sm text-white/80">
+          <span className="font-semibold text-white">Your guess:</span> {lastGuess.artist || "—"} — “{lastGuess.title || "—"}”
+        </p>
 
               <div className="mt-6 space-y-3">
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium text-purple-100/90 backdrop-blur">
@@ -982,5 +1229,27 @@ function FinalResultsView({ leaderboard }: ResultsViewProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+function LobbySuspenseFallback() {
+  return (
+    <GameLayout>
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center text-white/80">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-cyan-400" />
+        <div>
+          <p className="text-xs uppercase tracking-[0.4em] text-cyan-200/70">Preparing Lobby</p>
+          <p className="mt-2 text-lg font-semibold text-white">Loading your session details…</p>
+        </div>
+      </div>
+    </GameLayout>
+  );
+}
+
+export default function LobbyPage() {
+  return (
+    <Suspense fallback={<LobbySuspenseFallback />}>
+      <GameClient />
+    </Suspense>
   );
 }
