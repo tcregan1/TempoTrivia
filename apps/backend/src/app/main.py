@@ -135,18 +135,41 @@ async def start_round(room_code: str):
         if host_ws:
             await host_ws.send_text(json.dumps({
                 "type": "round_started",
-                "payload": {"songData": {"url": preview_url, "title": song["title"], "artist": song["artist"]}, "duration": 30, "isHost": True}
+                "payload": {
+                    "songData": {
+                        "url": preview_url,
+                        "title": song["title"],
+                        "artist": song["artist"],
+                    },
+                    "duration": 30,
+                    "isHost": True,
+                },
             }))
         for ws in room["sockets"]:
             if socket_index.get(ws, {}).get("playerId") != host_id:
                 await ws.send_text(json.dumps({
                     "type": "round_started",
-                    "payload": {"songData": {"url": "", "title": song["title"], "artist": song["artist"]}, "duration": 30, "isHost": False}
+                    "payload": {
+                        "songData": {
+                            "url": "",
+                            "title": song["title"],
+                            "artist": song["artist"],
+                        },
+                        "duration": 30,
+                        "isHost": False,
+                    },
                 }))
     else:
         await broadcast_room(room_code, {
             "type": "round_started",
-            "payload": {"songData": {"url": preview_url, "title": song["title"], "artist": song["artist"]}, "duration": 30}
+            "payload": {
+                "songData": {
+                    "url": preview_url,
+                    "title": song["title"],
+                    "artist": song["artist"],
+                },
+                "duration": 30,
+            },
         })
 
     asyncio.create_task(round_timer(room_code, 30))
@@ -217,7 +240,7 @@ def update_player_score(room, player_id, points):
     for player in room["players"]:
         if player["id"] == player_id:
             player["score"] += points
-            print(f"Player score = {player["score"]}")
+            print(f"Player score = {player['score']}")
             return
         
     
@@ -379,8 +402,8 @@ async def ws_endpoint(ws: WebSocket):
                 title = payload.get("title", "").strip()
                 print(f" Answer from {player_id}: {artist} - {title}")
                 song = room["current_song"]
-                print(f"THE SONG IS: {song["title"]}")
-                print(f"THE Artist IS: {song["artist"]}")
+                print(f"THE SONG IS: {song['title']}")
+                print(f"THE Artist IS: {song['artist']}")
                 if not song:
                     print(f"Song not set for {room_code}")
                     return
