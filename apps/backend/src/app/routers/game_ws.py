@@ -8,8 +8,8 @@ import asyncio
 import re
 from difflib import SequenceMatcher
 
-from database import Database
-from add_songs import get_spotify_client, get_artist_image_url
+from ..database import Database
+from ..add_songs import get_spotify_client, get_artist_image_url
 
 router = APIRouter()
 

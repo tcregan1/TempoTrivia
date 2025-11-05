@@ -4,7 +4,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 from dotenv import load_dotenv
 from itertools import islice
-from database import Database
+from .database import Database
 from dataclasses import dataclass
 import deezer
 import json
