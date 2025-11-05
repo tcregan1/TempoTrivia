@@ -842,7 +842,7 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal, answerRes
             </button>
           ) : (
             <div className="flex w-full items-center justify-center gap-3 rounded-2xl border border-emerald-400/40 bg-emerald-400/15 px-6 py-5 text-lg font-semibold text-emerald-100 shadow-[0_15px_45px_rgba(16,185,129,0.35)]">
-              <span className="text-2xl">✅</span>
+              <span className="text-2xl"></span>
               Answer locked in! Awaiting reveal…
             </div>
           )}
@@ -998,7 +998,7 @@ function LeaderboardView({ leaderboard, currentRound, totalRounds, isHost, onNex
           onClick={onNextRound}
           className="group flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 px-6 py-4 text-lg font-semibold text-slate-950 shadow-[0_20px_60px_rgba(56,189,248,0.45)] transition-all hover:shadow-[0_26px_80px_rgba(56,189,248,0.6)]"
         >
-          <span className="text-xl transition-transform group-hover:translate-x-0.5">➡️</span>
+          <span className="text-xl transition-transform group-hover:translate-x-0.5"></span>
           Launch Next Round
         </button>
       ) : (

@@ -106,6 +106,11 @@ async def reveal_answer(room_code: str):
 
 async def start_round(room_code: str):
     room = rooms.get(room_code)
+    playlist_name = room["selected_mode"]
+    print("*" * 80) 
+    print(f"PLAYLIST NAME: {playlist_name}")
+    print("*" * 80) 
+    playlist_id = Database.get_playlist_id(playlist_name)
     if not room:
         return
 
@@ -113,7 +118,7 @@ async def start_round(room_code: str):
     exclude_ids = list({int(x) for x in room.get("played_song_ids", []) if x is not None})
 
     # TODO: use the real playlist/mode id instead of hard-coded 1
-    song = Database.get_random_song_exclude_ids(1, exclude_ids)
+    song = Database.get_random_song_exclude_ids(playlist_id, exclude_ids)
     if not song:
         await broadcast_room(room_code, {"type": "no_more_songs", "payload": {}})
         return
@@ -344,13 +349,10 @@ async def ws_endpoint(ws: WebSocket):
             payload = msg.get("payload", {})
             if msg_type == "select_game_mode":
                 room = rooms.get(room_code)
-                selected_mode = payload.get("mode") # Get the mode from the client payload
-                
-                # Input validation (always a good idea)
+                selected_mode = payload.get("mode") # Get the mode from the client payload             
                 if not selected_mode or not room:
                     continue
                 
-                # Check if sender is host
                 if player_id != room.get("host_id"):
                     print(f" Not host! Cannot select mode.")
                     continue               
@@ -382,7 +384,6 @@ async def ws_endpoint(ws: WebSocket):
                 current_mode = room.get("selected_mode")
                 print(f" Starting game using mode: {current_mode}")
 
-                # Broadcast game state change (Omitted for brevity)
                 await broadcast_room(room_code, {
                     "type": "game_state_changed",
                     "payload": {"newState": "playing"}

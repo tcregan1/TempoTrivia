@@ -82,7 +82,6 @@ class Database:
             .select("songs(*)") 
             .eq("playlist_id", playlist_id)
         )
-
  
         if excluded_ids:
             query = query.not_.in_("song_id", excluded_ids)
@@ -113,3 +112,16 @@ class Database:
             "songs(*)"
         ).eq("playlist_id", playlist_id).execute()
         return [item["songs"] for item in response.data]
+    
+    @staticmethod
+    def get_playlist_id(playlist_name: str):
+        """Return playlist id from name (exact match)."""
+        res = (
+            supabase.table("playlists")
+            .select("id")
+            .eq("name", playlist_name)
+            .limit(1)
+            .execute()
+        )
+        return res.data[0]["id"] if res.data else None
+    

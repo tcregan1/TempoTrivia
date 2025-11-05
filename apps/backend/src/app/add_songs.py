@@ -11,7 +11,10 @@ import json
 import os
 load_dotenv()
 
-SPOTIFY_SCOPES = os.getenv("SPOTIFY_SCOPES", "playlist-read-private playlist-read-collaborative")
+SPOTIFY_SCOPES = os.getenv(
+    "SPOTIFY_SCOPES",
+    "playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private"
+)
 SPOTIFY_REDIRECT_URI = os.getenv("SPOTIPY_REDIRECT_URI", "http://127.0.0.1:8888/callback")
 DEFAULT_PLAYLIST_NAME = os.getenv("DEFAULT_INGEST_PLAYLIST", "Normal Mode")
 
@@ -35,7 +38,7 @@ def get_spotify_client() -> spotipy.Spotify:
         scope=SPOTIFY_SCOPES,
         open_browser=True,
         cache_path=".cache-spotify-ingest",
-        show_dialog=False,
+        show_dialog=True,
     )
     return spotipy.Spotify(auth_manager=auth)
 
@@ -62,6 +65,7 @@ def get_user_playlists(sp: spotipy.Spotify) -> list[dict]:
     playlists = []
     offset = 0
     while True:
+        
         page = sp.current_user_playlists(limit=50, offset=offset)
         for item in page.get("items", []):
             playlists.append({
@@ -172,13 +176,61 @@ def ingest_spotify_playlist(spotify_playlist_id: str, target_playlist_name: str 
         "linked_to_playlist": linked,
         "unmatched_on_deezer": missing,
     }
+    
+    
+from typing import Iterable
+import spotipy
 
-if __name__ == "__main__":
-    import sys
-    
-    sp = get_spotify_client()
-    
-    
+def unfollow_all_except(
+    sp: spotipy.Spotify,
+    keep_names: Iterable[str],
+    case_sensitive: bool = False
+) -> int:
+    """
+    Unfollow all playlists except those whose names are in keep_names.
+    Returns the number of playlists unfollowed.
+    """
+    if not keep_names:
+        raise ValueError("keep_names must contain at least one playlist name to keep.")
+
+    # Build a fast-lookup set of names to keep
+    if case_sensitive:
+        keep = {name for name in keep_names}
+        def match(name: str) -> bool:
+            return name in keep
+    else:
+        keep = {name.casefold() for name in keep_names}
+        def match(name: str) -> bool:
+            return name.casefold() in keep
+
+    unfollowed = 0
+    results = sp.current_user_playlists(limit=50)
+
+    while True:
+        for pl in results["items"]:
+            pl_name = pl.get("name") or ""
+            pl_id = pl["id"]
+
+            # Keep if the name is on the allow-list; otherwise unfollow
+            if not match(pl_name):
+                sp.current_user_unfollow_playlist(pl_id)
+                unfollowed += 1
+                print(f"Unfollowed: {pl_name} ({pl_id})")
+            else:
+                print(f"Kept:       {pl_name} ({pl_id})")
+
+        # Pagination
+        if results.get("next"):
+            results = sp.next(results)
+        else:
+            break
+
+    print(f"Done. Unfollowed {unfollowed} playlist(s).")
+    return unfollowed
+
+
+
+def pg_flow(sp:spotipy.Spotify):
     print("Fetching your Spotify playlists...\n")
     playlists = get_user_playlists(sp)
     
@@ -201,13 +253,41 @@ if __name__ == "__main__":
     else:
         pl_id = choice
     
-    summary = ingest_spotify_playlist(pl_id, DEFAULT_PLAYLIST_NAME)
+    
+    playlist_name = input("Enter a name for the playlist: ")
+    summary = ingest_spotify_playlist(pl_id, playlist_name)
     print("\n" + "="*50)
     print("IMPORT SUMMARY")
     print("="*50)
     print(json.dumps(summary, indent=2))
+    
+def debug_list(sp):
+    me = sp.me()
+    print("User:", me["id"])
+    owners = {}
+    results = sp.current_user_playlists(limit=50)
+    while True:
+        for pl in results["items"]:
+            owner_id = (pl.get("owner") or {}).get("id")
+            owners.setdefault(owner_id, []).append(pl["name"])
+        if results.get("next"):
+            results = sp.next(results)
+        else:
+            break
+
+    print("\nOwners seen:", list(owners.keys())[:10], "…")
+    print("\nPlaylists owned by 'spotify' that you FOLLOW:")
+    for name in owners.get("spotify", []):
+        print(" -", name)
 
 
+
+if __name__ == "__main__":
+    import sys
+    
+    sp = get_spotify_client()
+    pg_flow(sp)
+    
 
 
 
