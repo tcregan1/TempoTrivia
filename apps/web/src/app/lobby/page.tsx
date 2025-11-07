@@ -80,6 +80,7 @@ function GameClient() {
   const [gameState, setGameState] = useState<GameState>("lobby");
   const [players, setPlayers] = useState<Player[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
+  const desiredModeRef = useRef<string | null>(null);
   const [songData, setSongData] = useState<{ url: string; title: string; artist: string }>({ url: "", title: "", artist: "" });
   const [timeRemaining, setTimeRemaining] = useState<number>(30);
   const [leaderboard, setLeaderboard] = useState<LeaderboardPlayer[]>([]);
@@ -88,6 +89,9 @@ function GameClient() {
   const params = useSearchParams();
   const rc = params.get("roomcode") ?? "";
   const alias = params.get("nickname") ?? "";
+  if (desiredModeRef.current === null) {
+    desiredModeRef.current = params.get("mode");
+  }
   const [hostId, setHostId] = useState<string>("");
   const [myPlayerId, setMyPlayerId] = useState<string>("");
   const [gameModes, setGameModes] = useState<string[]>([]);
@@ -230,6 +234,19 @@ function GameClient() {
     setHostOnlyAudio(hostOnly);
     send("set_audio_mode", { hostOnly });
   };
+
+  useEffect(() => {
+    const desired = desiredModeRef.current;
+    if (!desired) return;
+    if (!gameModes.includes(desired)) return;
+    if (!hostId || !myPlayerId || hostId !== myPlayerId) return;
+    if (selectedGameMode === desired) {
+      desiredModeRef.current = null;
+      return;
+    }
+    handleSelectMode(desired);
+    desiredModeRef.current = null;
+  }, [gameModes, hostId, myPlayerId, selectedGameMode]);
 
   useEffect(() => {
     if (gameState !== "playing") return;
