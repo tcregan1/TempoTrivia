@@ -24,8 +24,8 @@ export function TextInput({
   type = "text",
 }: TextInputProps) {
   return (
-    <div className="space-y-1">
-      <label htmlFor={id} className="block text-sm font-medium">
+    <div className="space-y-2">
+      <label htmlFor={id} className="block text-xs font-semibold uppercase tracking-[0.4em] text-white/70">
         {label}
       </label>
       <input
@@ -37,10 +37,10 @@ export function TextInput({
         onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
         aria-invalid={!!error}
         aria-describedby={error ? `${id}-error` : undefined}
-        className="w-full border rounded px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-300"
+        className="w-full rounded-xl border border-white/12 bg-white/10 px-4 py-3 text-sm font-medium uppercase tracking-[0.2em] text-white outline-none transition focus:border-fuchsia-400/70 focus:ring-2 focus:ring-fuchsia-400/30"
       />
       {error && (
-        <p id={`${id}-error`} className="text-sm text-red-600">
+        <p id={`${id}-error`} className="text-xs text-rose-300">
           {error}
         </p>
       )}

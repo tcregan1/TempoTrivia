@@ -1,43 +1,89 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --font-geist-sans: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-geist-mono: "Menlo", "Fira Code", "SFMono-Regular", Consolas, monospace;
+  --background: #010104;
+  --background-strong: #010103;
+  --foreground: #f5f7f0;
+  --muted: #a0a3ae;
+  --neon: #d6ff00;
+  --font-display-fallback: "Orbitron", "Chakra Petch", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-body-fallback: "Chakra Petch", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-display-fallback);
+  --font-body: var(--font-body-fallback);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-body, var(--font-body-fallback));
+  --font-mono: "Space Mono", "Fira Code", "SFMono-Regular", Consolas, monospace;
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  margin: 0;
+  background: #010104;
+  background-image: radial-gradient(circle at 12% -10%, rgba(214, 255, 0, 0.1), transparent 52%),
+    radial-gradient(circle at 88% 120%, rgba(129, 71, 239, 0.18), transparent 58%),
+    linear-gradient(185deg, rgba(4, 4, 10, 1) 0%, rgba(3, 3, 12, 1) 45%, rgba(1, 1, 5, 1) 100%);
   color: var(--foreground);
-  font-family: var(--font-geist-sans);
+  font-family: var(--font-body, var(--font-body-fallback));
+  letter-spacing: 0.02em;
 }
 
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+      0deg,
+      rgba(214, 255, 0, 0.07) 0,
+      rgba(214, 255, 0, 0.07) 1px,
+      transparent 1px,
+      transparent 140px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(168, 85, 247, 0.08) 0,
+      rgba(168, 85, 247, 0.08) 1px,
+      transparent 1px,
+      transparent 180px
+    );
+  opacity: 0.25;
+  z-index: -1;
+}
 
-@layer components {
+@layer utilities {
+  .glow-ring {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 32px rgba(76, 195, 255, 0.18), inset 0 0 40px rgba(255, 29, 126, 0.08);
+  }
 
-    .heading {
-    @apply mb-4 text-4xl md:text-5xl lg:text-6xl font-extrabold leading-none tracking-tight text-blue-600 dark:text-blue-500;
+  .scanline::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.07) 50%, transparent 100%);
+    mix-blend-mode: screen;
+    opacity: 0;
+    transition: opacity 300ms ease;
   }
-  
-  .btn {
-    @apply font-medium rounded-lg text-sm px-5 py-2.5 text-center focus:outline-none;
+
+  .scanline:hover::after {
+    opacity: 1;
   }
-  .btn-cyan {
-    @apply text-white bg-gradient-to-r from-cyan-400 via-cyan-500 to-cyan-600 hover:bg-gradient-to-br focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800;
+
+  .neon-divider {
+    position: relative;
+  }
+
+  .neon-divider::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: 1px;
+    transform: translateY(-50%);
+    background: linear-gradient(90deg, transparent, rgba(255, 112, 190, 0.6), transparent);
   }
 }

@@ -62,13 +62,18 @@ interface ResultsViewProps {
 // ---- Shared Layout Component ----
 function GameLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(124,58,237,0.25),_transparent_60%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(14,165,233,0.18),_transparent_65%)]" />
-      <div className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-fuchsia-500/30 to-transparent" />
-      <div className="relative mx-auto max-w-5xl px-6 py-10">
-        <div className="rounded-[32px] border border-white/10 bg-white/5 bg-clip-padding p-8 backdrop-blur-xl shadow-[0_20px_70px_rgba(15,23,42,0.75)]">
-          {children}
+    <div className="relative min-h-screen overflow-hidden text-white">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,118,200,0.2),_transparent_65%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(63,164,255,0.22),_transparent_70%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,0.05)_0%,transparent_40%,transparent_60%,rgba(86,175,255,0.18)_100%)]" />
+      <div className="pointer-events-none absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-white/25 to-transparent lg:block" />
+      <div className="relative mx-auto max-w-6xl px-6 py-12">
+        <div className="relative overflow-hidden rounded-[42px] border border-white/12 bg-white/5/60 p-10 shadow-[0_50px_150px_rgba(4,6,18,0.85)] backdrop-blur-2xl">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,118,200,0.2),_transparent_55%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(160deg,rgba(255,255,255,0.08)_0%,transparent_50%,transparent_65%,rgba(68,184,255,0.2)_100%)]" />
+          <div className="relative">
+            {children}
+          </div>
         </div>
       </div>
     </div>
@@ -360,84 +365,117 @@ function LobbyView({
 
   return (
     <div className="space-y-12">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-sm uppercase tracking-[0.45em] text-cyan-200/70">Tempo Trivia</p>
-          <h1 className="mt-2 text-5xl font-black text-white drop-shadow-[0_8px_40px_rgba(56,189,248,0.35)]">
-            Lobby Control Center
-          </h1>
+      <section className="relative overflow-hidden rounded-[32px] border border-white/12 bg-gradient-to-r from-[#12061f]/90 via-[#04020f]/96 to-[#051635]/92 p-8 shadow-[0_40px_120px_rgba(6,10,28,0.75)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,118,200,0.25),_transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.1)_0%,transparent_45%,transparent_65%,rgba(70,180,255,0.25)_100%)]" />
+        <div className="relative flex flex-wrap items-end justify-between gap-6">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-4 py-1">
+              <span className="text-[11px] uppercase tracking-[0.5em] text-white/75">TempoTrivia</span>
+              <span className="h-1 w-1 rounded-full bg-gradient-to-r from-fuchsia-400 to-cyan-400" />
+              <span className="text-[11px] uppercase tracking-[0.35em] text-white/50">Operations deck</span>
+            </div>
+            <h1 className="text-4xl font-semibold uppercase tracking-[0.3em] text-white drop-shadow-[0_18px_70px_rgba(86,181,255,0.45)] sm:text-5xl">
+              Lobby control nexus
+            </h1>
+            <p className="max-w-2xl text-sm text-white/75 md:text-base">
+              Monitor squad readiness, configure the active playlist protocol, and align audio distribution. Once the access deck glows cyan, you’re clear to deploy the next round.
+            </p>
+            <div className="flex flex-wrap items-center gap-4 text-[11px] uppercase tracking-[0.4em] text-white/55">
+              <span className="rounded-full border border-white/15 px-4 py-2">Real-time sync</span>
+              <span className="rounded-full border border-white/15 px-4 py-2">Player telemetry</span>
+              <span className="rounded-full border border-white/15 px-4 py-2">Host overrides</span>
+            </div>
+          </div>
+          <div className="relative overflow-hidden rounded-[22px] border border-white/15 bg-white/10 px-6 py-5 text-right shadow-[0_20px_80px_rgba(82,183,255,0.35)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(86,181,255,0.35),_transparent_70%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(160deg,rgba(255,255,255,0.08)_0%,transparent_60%,rgba(255,118,200,0.2)_100%)]" />
+            <div className="relative space-y-2">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-white/60">Room access key</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.5em] text-white/60">Share securely</p>
+              <p className="text-3xl font-semibold tracking-[0.55em] text-white">{roomCode}</p>
+            </div>
+          </div>
         </div>
-        <span className="rounded-full border border-cyan-500/50 bg-cyan-500/10 px-6 py-2 text-sm font-semibold uppercase tracking-wider text-cyan-200">
-          Room Code · {roomCode}
-        </span>
-      </div>
+      </section>
 
       <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-8">
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/80 via-slate-900/40 to-indigo-900/40 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.6)]">
-            <div className="pointer-events-none absolute -top-32 right-10 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl" />
-            <div className="relative">
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-white">Players</h2>
-                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-cyan-100">
-                  {players.length} joined
+          <div className="relative overflow-hidden rounded-[32px] border border-white/12 bg-gradient-to-br from-[#150a2b]/88 via-[#05030c]/96 to-[#081736]/92 p-6 shadow-[0_36px_110px_rgba(10,20,45,0.75)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(63,164,255,0.25),_transparent_60%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(160deg,rgba(255,255,255,0.08)_0%,transparent_55%,rgba(255,118,200,0.2)_100%)]" />
+            <div className="relative space-y-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.45em] text-white/60">Squad manifest</p>
+                  <h2 className="mt-2 text-2xl font-semibold uppercase tracking-[0.3em] text-white">Active players</h2>
+                </div>
+                <span className="rounded-full border border-white/15 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.4em] text-white/70">
+                  {players.length} linked
                 </span>
               </div>
               <div className="space-y-3">
                 {players.map((p) => (
                   <div
                     key={p.id}
-                    className="group flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-5 py-4 text-white shadow-[0_10px_30px_rgba(14,165,233,0.25)] transition-all hover:border-cyan-400/60 hover:bg-cyan-400/10"
+                    className="group relative flex items-center justify-between overflow-hidden rounded-2xl border border-white/12 bg-white/5/70 px-5 py-4 text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-fuchsia-400/60 hover:bg-fuchsia-400/10"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 font-semibold">
+                    <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ backgroundImage: "linear-gradient(140deg, rgba(255,118,200,0.18) 0%, transparent 45%, rgba(70,180,255,0.25) 100%)" }} />
+                    <div className="relative flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-gradient-to-br from-fuchsia-500 via-sky-500 to-cyan-500 text-lg font-semibold">
                         {p.name.charAt(0).toUpperCase()}
                       </div>
-                      <p className="text-lg font-medium">
-                        {p.name}
-                        {p.id === hostId && <span className="ml-2 text-sm text-amber-300">👑 Host</span>}
-                      </p>
+                      <div className="text-left">
+                        <p className="text-lg font-semibold uppercase tracking-[0.2em]">
+                          {p.name}
+                          {p.id === hostId && <span className="ml-2 text-xs text-amber-300">◉ Host</span>}
+                        </p>
+                        <p className="text-[11px] uppercase tracking-[0.4em] text-white/45">Status feed</p>
+                      </div>
                     </div>
-                    <span className="text-xs uppercase tracking-[0.35em] text-cyan-100/60">
-                      Ready
-                    </span>
+                    <span className="relative text-[11px] uppercase tracking-[0.45em] text-white/65">Ready</span>
                   </div>
                 ))}
                 {players.length === 0 && (
-                  <div className="flex items-center justify-center rounded-2xl border border-dashed border-white/10 py-12 text-cyan-100/70">
-                    Waiting for players to join…
+                  <div className="flex items-center justify-center rounded-2xl border border-dashed border-white/20 py-12 text-white/60">
+                    Awaiting first connection…
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-fuchsia-900/60 via-slate-900/40 to-blue-900/40 p-6 shadow-[0_20px_60px_rgba(91,33,182,0.45)]">
-            <div className="pointer-events-none absolute -left-24 top-0 h-64 w-64 rounded-full bg-fuchsia-500/20 blur-3xl" />
-            <div className="relative">
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-2xl font-semibold">Game Mode</h2>
+          <div className="relative overflow-hidden rounded-[32px] border border-white/12 bg-gradient-to-br from-[#1d0a31]/90 via-[#05030c]/96 to-[#0a1f3f]/92 p-6 shadow-[0_36px_110px_rgba(25,8,55,0.7)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,118,200,0.28),_transparent_55%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,rgba(255,255,255,0.08)_0%,transparent_50%,transparent_65%,rgba(65,178,255,0.25)_100%)]" />
+            <div className="relative space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.45em] text-white/60">Playlist protocol</p>
+                  <h2 className="mt-2 text-2xl font-semibold uppercase tracking-[0.3em] text-white">Mode selection</h2>
+                </div>
                 {selectedMode && (
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-fuchsia-100">
-                    Configured
+                  <span className="rounded-full border border-white/15 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.4em] text-white/70">
+                    Online
                   </span>
                 )}
               </div>
 
               {selectedMode ? (
                 <div className="space-y-4">
-                  <div className="flex flex-col gap-3 rounded-2xl border border-fuchsia-400/40 bg-white/5 p-5 shadow-[0_10px_35px_rgba(192,132,252,0.35)] md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.35em] text-fuchsia-200/80">Selected Mode</p>
-                      <p className="mt-2 text-2xl font-semibold">🎵 {selectedMode}</p>
+                  <div className="relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-white/12 bg-white/5 p-5 text-left shadow-[0_24px_80px_rgba(112,66,192,0.35)] md:flex-row md:items-center md:justify-between">
+                    <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(255,118,200,0.22)_0%,transparent_50%,rgba(72,176,255,0.28)_100%)] opacity-80" />
+                    <div className="relative">
+                      <p className="text-[11px] uppercase tracking-[0.45em] text-white/70">Active mode</p>
+                      <p className="mt-2 text-2xl font-semibold uppercase tracking-[0.3em] text-white">{selectedMode}</p>
                     </div>
                     {isHost && (
                       <button
                         onClick={() => setIsDropdownOpen(true)}
-                        className="group flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition-all hover:border-fuchsia-400/70 hover:bg-fuchsia-400/20"
+                        className="relative flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.45em] text-white transition-all duration-300 hover:border-fuchsia-400/70 hover:bg-fuchsia-400/20"
                       >
-                        <span className="text-lg transition-transform group-hover:translate-x-0.5">⚙️</span>
-                        Adjust Mode
+                        <span className="text-base">⚙</span>
+                        Reconfigure
                       </button>
                     )}
                   </div>
@@ -450,7 +488,7 @@ function LobbyView({
                         onClick={() => setIsDropdownOpen(false)}
                       />
                       <div className="relative z-50 mt-3">
-                        <div className="overflow-hidden rounded-2xl border border-fuchsia-400/30 bg-slate-950/95 backdrop-blur-xl shadow-[0_30px_60px_rgba(192,132,252,0.35)]">
+                        <div className="overflow-hidden rounded-2xl border border-fuchsia-400/40 bg-[#05030c]/95 backdrop-blur-xl shadow-[0_32px_90px_rgba(128,90,255,0.4)]">
                           <div className="h-1 bg-gradient-to-r from-fuchsia-400 via-purple-500 to-cyan-400" />
                           <ul role="listbox" className="max-h-64 overflow-auto divide-y divide-white/5">
                             {gameModes.length > 0 ? (
@@ -464,15 +502,15 @@ function LobbyView({
                                       className="flex w-full items-start justify-between gap-4 px-6 py-4 text-left text-white transition-colors hover:bg-white/10"
                                     >
                                       <span className="font-medium">
-                                        🎵 {modeName}
+                                        {modeName}
                                         {description && (
                                           <span className="mt-2 block text-sm font-normal text-white/60">
                                             {description}
                                           </span>
                                         )}
                                       </span>
-                                      <span className="text-xs uppercase tracking-[0.3em] text-white/40">
-                                        Select
+                                      <span className="text-[11px] uppercase tracking-[0.4em] text-white/40">
+                                        Engage
                                       </span>
                                     </button>
                                   </li>
@@ -488,23 +526,23 @@ function LobbyView({
                   )}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-white/20 bg-white/5 p-10 text-center">
-                  <p className="text-base text-white/70">
+                <div className="flex flex-col items-center justify-center gap-5 rounded-2xl border border-dashed border-white/25 bg-white/5 p-10 text-center">
+                  <p className="text-sm text-white/70">
                     {isHost
-                      ? "Pick the vibe for this session to get everyone guessing!"
-                      : "Waiting for your host to lock in a game mode."}
+                      ? "Select the sonic profile for this match to brief every participant."
+                      : "Awaiting host configuration for the upcoming playlist protocol."}
                   </p>
                   <button
                     onClick={toggleDropdown}
                     disabled={!isHost}
-                    className={`flex items-center gap-3 rounded-full px-6 py-3 text-lg font-semibold transition-all ${
+                    className={`flex items-center gap-3 rounded-full px-7 py-3 text-sm font-semibold uppercase tracking-[0.4em] transition-all duration-300 ${
                       isHost
-                        ? "bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-white shadow-[0_15px_40px_rgba(14,165,233,0.35)] hover:shadow-[0_20px_50px_rgba(14,165,233,0.5)]"
+                        ? "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-500 text-white shadow-[0_24px_80px_rgba(129,80,255,0.45)] hover:shadow-[0_28px_95px_rgba(129,80,255,0.6)]"
                         : "cursor-not-allowed border border-white/20 text-white/60"
                     }`}
                     type="button"
                   >
-                    {isHost ? "Open Mode Selector" : "Awaiting mode selection"}
+                    {isHost ? "Open selector" : "Stand by"}
                   </button>
 
                   {isDropdownOpen && isHost && (
@@ -515,7 +553,7 @@ function LobbyView({
                         onClick={() => setIsDropdownOpen(false)}
                       />
                       <div className="relative z-50 w-full max-w-xl">
-                        <div className="mt-3 overflow-hidden rounded-2xl border border-fuchsia-400/30 bg-slate-950/95 backdrop-blur-xl shadow-[0_30px_60px_rgba(192,132,252,0.35)]">
+                        <div className="mt-3 overflow-hidden rounded-2xl border border-fuchsia-400/40 bg-[#05030c]/95 backdrop-blur-xl shadow-[0_32px_90px_rgba(128,90,255,0.4)]">
                           <div className="h-1 bg-gradient-to-r from-fuchsia-400 via-purple-500 to-cyan-400" />
                           <ul role="listbox" className="max-h-64 overflow-auto divide-y divide-white/5">
                             {gameModes.length > 0 ? (
@@ -529,16 +567,14 @@ function LobbyView({
                                       className="flex w-full items-start justify-between gap-4 px-6 py-4 text-left text-white transition-colors hover:bg-white/10"
                                     >
                                       <span className="font-medium">
-                                        🎵 {modeName}
+                                        {modeName}
                                         {description && (
                                           <span className="mt-2 block text-sm font-normal text-white/60">
                                             {description}
                                           </span>
                                         )}
                                       </span>
-                                      <span className="text-xs uppercase tracking-[0.3em] text-white/40">
-                                        Select
-                                      </span>
+                                      <span className="text-[11px] uppercase tracking-[0.4em] text-white/40">Engage</span>
                                     </button>
                                   </li>
                                 );
@@ -559,57 +595,61 @@ function LobbyView({
 
         <div className="space-y-8">
           {isHost && (
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-900/60 via-slate-900/40 to-cyan-900/40 p-6 shadow-[0_20px_60px_rgba(16,185,129,0.45)]">
-              <div className="pointer-events-none absolute -right-20 top-1/2 h-56 w-56 -translate-y-1/2 rounded-full bg-emerald-400/20 blur-3xl" />
+            <div className="relative overflow-hidden rounded-[32px] border border-white/12 bg-gradient-to-br from-[#0f271f]/85 via-[#05030c]/96 to-[#0a2f36]/92 p-6 shadow-[0_32px_100px_rgba(9,38,34,0.65)]">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(64,228,186,0.28),_transparent_60%)]" />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,rgba(255,255,255,0.08)_0%,transparent_55%,rgba(86,181,255,0.2)_100%)]" />
               <div className="relative space-y-5">
-                <h2 className="text-2xl font-semibold">Audio Output</h2>
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.45em] text-white/60">Audio channel</p>
+                  <h2 className="mt-2 text-2xl font-semibold uppercase tracking-[0.3em] text-white">Output routing</h2>
+                </div>
                 <p className="text-sm text-white/70">
-                  Decide whether the round audio plays everywhere or only on your device for in-person sessions.
+                  Choose whether playback routes to every player headset or stays locked to your device for centralized listening sessions.
                 </p>
-                <label className="flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition-all hover:border-emerald-400/60 hover:bg-emerald-400/10">
+                <label className="flex items-start gap-4 overflow-hidden rounded-2xl border border-white/12 bg-white/5 p-4 text-left transition-all duration-300 hover:border-emerald-400/60 hover:bg-emerald-400/15">
                   <input
                     type="checkbox"
                     checked={hostOnlyAudio}
                     onChange={(e) => onAudioModeToggle(e.target.checked)}
                     className="mt-1 h-5 w-5 cursor-pointer accent-emerald-400"
                   />
-                  <div>
-                    <div className="flex items-center gap-2 text-base font-semibold">
-                      <span className="text-xl">🔊</span>
-                      In-Person Mode
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2 text-sm font-semibold uppercase tracking-[0.35em] text-white">
+                      <span className="text-lg">🔊</span>
+                      In-person mode
                       {hostOnlyAudio && (
-                        <span className="ml-2 rounded-full bg-emerald-400/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-200">
+                        <span className="rounded-full border border-emerald-400/60 bg-emerald-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.4em] text-emerald-100">
                           Active
                         </span>
                       )}
                     </div>
-                    <p className="mt-2 text-sm text-white/60">
-                      When enabled, only the host hears the audio—perfect for parties gathered around a single speaker.
+                    <p className="text-xs text-white/65">
+                      Toggle on to keep the soundtrack local. Leave it off for full broadcast synchronization across the network.
                     </p>
-                    {!hostOnlyAudio && (
-                      <p className="mt-3 text-xs font-medium uppercase tracking-[0.35em] text-cyan-200/70">
-                        Broadcast to every player
-                      </p>
-                    )}
+                    <p className="text-[10px] uppercase tracking-[0.4em] text-emerald-200/70">
+                      {hostOnlyAudio ? "Host-only channel engaged" : "Broadcast to all squad members"}
+                    </p>
                   </div>
                 </label>
               </div>
             </div>
           )}
 
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/70 via-slate-900/40 to-cyan-900/40 p-6 shadow-[0_20px_60px_rgba(15,118,110,0.45)]">
-            <div className="pointer-events-none absolute -bottom-24 left-10 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
+          <div className="relative overflow-hidden rounded-[32px] border border-white/12 bg-gradient-to-br from-[#110728]/88 via-[#05030c]/96 to-[#041b34]/92 p-6 shadow-[0_34px_110px_rgba(8,16,38,0.7)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(67,170,255,0.28),_transparent_60%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,rgba(255,255,255,0.08)_0%,transparent_55%,rgba(255,118,200,0.2)_100%)]" />
             <div className="relative flex flex-col gap-6">
-              <div>
-                <h2 className="text-2xl font-semibold">Session Status</h2>
-                <p className="mt-2 text-sm text-white/70">
+              <div className="space-y-2">
+                <p className="text-[11px] uppercase tracking-[0.45em] text-white/60">Session status</p>
+                <h2 className="text-2xl font-semibold uppercase tracking-[0.3em] text-white">Launch control</h2>
+                <p className="text-sm text-white/70">
                   {isHost
-                    ? "Launch the next round when you’re ready—everyone will see a five-second reveal window between rounds."
-                    : "Hang tight while the host locks in settings and starts the game."}
+                    ? "Greenlight the next round once all systems align. A reveal countdown pulses between rounds before the new track initializes."
+                    : "Hold position while the host finalizes the playlist protocol and prepares the countdown."}
                 </p>
                 {isHost && players.length === 1 && (
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.35em] text-emerald-200/80">
-                    Solo runs are welcome—start whenever you’re ready.
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.4em] text-emerald-200/80">
+                    Solo mode primed—launch whenever ready.
                   </p>
                 )}
               </div>
@@ -618,23 +658,27 @@ function LobbyView({
                 <button
                   onClick={onStart}
                   disabled={!canStartGame}
-                  className="group flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 px-6 py-4 text-lg font-semibold text-slate-950 shadow-[0_20px_60px_rgba(56,189,248,0.45)] transition-all hover:shadow-[0_25px_70px_rgba(56,189,248,0.6)] disabled:cursor-not-allowed disabled:opacity-60"
+                  className={`group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-full px-8 py-4 text-sm font-semibold uppercase tracking-[0.45em] transition-all duration-300
+                    ${canStartGame
+                      ? "bg-gradient-to-r from-fuchsia-500 via-blue-500 to-cyan-400 text-white shadow-[0_28px_90px_rgba(76,156,255,0.55)] hover:shadow-[0_32px_110px_rgba(76,156,255,0.7)]"
+                      : "cursor-not-allowed border border-white/20 bg-white/10 text-white/50"}
+                  `}
                 >
-                  <span className="text-xl transition-transform group-hover:translate-x-0.5">🚀</span>
-                  Start Game
+                  <span className="text-lg">⟠</span>
+                  Initiate round
                 </button>
               ) : (
-                <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 py-8 text-center text-white/70">
+                <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/12 bg-white/5 py-8 text-center text-white/70">
                   <div className="text-4xl animate-pulse">⏳</div>
-                  <p className="text-sm uppercase tracking-[0.35em]">Awaiting host</p>
+                  <p className="text-[11px] uppercase tracking-[0.45em]">Awaiting host</p>
                 </div>
               )}
 
               {!canStartGame && isHost && (
-                <p className="text-center text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
+                <p className="text-center text-[10px] font-semibold uppercase tracking-[0.4em] text-white/60">
                   {players.length === 0
-                    ? "Invite at least one player to begin"
-                    : "Select a game mode to unlock start"}
+                    ? "Need at least one additional player before ignition."
+                    : "Select a playlist protocol to unlock launch."}
                 </p>
               )}
             </div>
@@ -732,115 +776,117 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal, answerRes
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-center gap-4 mb-8">
-        <div className="text-6xl animate-bounce">🎵</div>
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-600 bg-clip-text text-transparent">
-          Guess the Song
-        </h1>
+    <div className="space-y-10">
+      <div className="relative overflow-hidden rounded-[30px] border border-white/12 bg-gradient-to-r from-[#130624]/90 via-[#04020f]/96 to-[#071d3a]/92 p-6 shadow-[0_36px_110px_rgba(8,14,32,0.75)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,118,200,0.24),_transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,rgba(255,255,255,0.08)_0%,transparent_50%,rgba(63,169,255,0.25)_100%)]" />
+        <div className="relative flex flex-wrap items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-white/10 text-3xl">🎵</span>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.45em] text-white/60">Signal decoding</p>
+              <h1 className="text-3xl font-semibold uppercase tracking-[0.3em] text-white sm:text-4xl">Identify the track</h1>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-[11px] uppercase tracking-[0.4em] text-white/55">
+            <span className="rounded-full border border-white/15 px-4 py-2">Live waveform</span>
+            <span className="rounded-full border border-white/15 px-4 py-2">30s window</span>
+            <span className="rounded-full border border-white/15 px-4 py-2">Dual verification</span>
+          </div>
+        </div>
       </div>
 
       <audio ref={audioRef} src={songUrl} className="hidden" />
 
       {isRevealPhase ? (
-        <div className="relative overflow-hidden rounded-3xl border border-purple-500/30 bg-gradient-to-br from-purple-900/70 via-slate-900 to-black p-10 shadow-[0_20px_60px_rgba(168,85,247,0.35)]">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(124,58,237,0.35),_transparent_60%)]" />
-          <div className="relative flex flex-col items-center gap-8 md:flex-row md:items-center md:justify-center">
-            {reveal?.artistImageUrl ? (
-              <div className="relative">
-                <div className="absolute inset-0 -translate-x-4 translate-y-4 rounded-full bg-purple-500/30 blur-2xl" />
-                <div className="relative h-40 w-40 overflow-hidden rounded-full ring-4 ring-purple-400/60 shadow-[0_0_40px_rgba(168,85,247,0.55)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={reveal.artistImageUrl}
-                    alt={`${reveal.artist} artist portrait`}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
+        <div className="relative overflow-hidden rounded-[36px] border border-white/12 bg-gradient-to-br from-[#1a0734]/88 via-[#05030c]/96 to-[#0a2142]/92 p-10 shadow-[0_42px_120px_rgba(18,10,40,0.75)]">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(178,102,255,0.28),_transparent_60%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,rgba(255,255,255,0.08)_0%,transparent_50%,rgba(63,169,255,0.25)_100%)]" />
+          <div className="relative flex flex-col items-center gap-10 md:flex-row md:items-center md:justify-center">
+            <div className="relative flex items-center justify-center">
+              <div className="absolute -left-6 top-6 h-44 w-44 rounded-full bg-fuchsia-500/25 blur-3xl" />
+              <div className="relative h-44 w-44 overflow-hidden rounded-full border border-white/15 bg-black/30 shadow-[0_0_50px_rgba(178,102,255,0.45)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {reveal?.artistImageUrl ? (
+                  <img src={reveal.artistImageUrl} alt={`${reveal.artist} artist portrait`} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-5xl">🎤</div>
+                )}
               </div>
-            ) : (
-              <div className="relative flex h-36 w-36 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 text-5xl text-white shadow-[0_0_30px_rgba(129,140,248,0.6)]">
-                🎤
-              </div>
-            )}
+            </div>
 
             <div className="max-w-xl text-center md:text-left">
-              <p className="uppercase tracking-[0.4em] text-xs text-purple-200/80">Answer Reveal</p>
-              <h2 className="mt-4 text-4xl font-extrabold text-white drop-shadow-[0_4px_16px_rgba(79,70,229,0.45)]">
-                {reveal?.artist}
-              </h2>
-              <p className="mt-3 text-2xl font-semibold text-purple-100">“{reveal?.title}”</p>
+              <p className="text-[11px] uppercase tracking-[0.45em] text-white/60">Answer reveal</p>
+              <h2 className="mt-4 text-4xl font-semibold uppercase tracking-[0.25em] text-white">{reveal?.artist}</h2>
+              <p className="mt-3 text-xl font-semibold text-white/80">“{reveal?.title}”</p>
 
-              <div className="mt-6 space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium text-purple-100/90 backdrop-blur">
-                  <span className="text-lg">⏱️</span>
-                  {revealCountdown > 0 ? `Next round in ${revealCountdown}s` : "Get ready for the next round!"}
+              <div className="mt-6 space-y-4">
+                <div className="inline-flex items-center gap-3 rounded-full border border-white/12 bg-white/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-white/75 backdrop-blur">
+                  <span className="text-base">⏱</span>
+                  {revealCountdown > 0 ? `Next round in ${revealCountdown}s` : "Prepare for redeploy"}
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400 transition-all duration-700 ease-out"
+                    className="h-full rounded-full bg-gradient-to-r from-fuchsia-400 via-purple-400 to-cyan-400 transition-all duration-700 ease-out"
                     style={{ width: `${revealProgress}%` }}
                   />
                 </div>
-                <RevealFeedback
-                  hasSubmitted={hasSubmitted}
-                  answerResult={answerResult}
-                  lastGuess={lastGuess}
-                />
+                <RevealFeedback hasSubmitted={hasSubmitted} answerResult={answerResult} lastGuess={lastGuess} />
               </div>
             </div>
           </div>
         </div>
       ) : (
         <>
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/70 via-slate-900/40 to-cyan-900/40 p-8 shadow-[0_20px_60px_rgba(14,165,233,0.35)]">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(6,182,212,0.18),_transparent_55%)]" />
+          <div className="relative overflow-hidden rounded-[36px] border border-white/12 bg-gradient-to-br from-[#0e1231]/90 via-[#05030c]/96 to-[#062544]/92 p-8 shadow-[0_36px_110px_rgba(6,18,45,0.75)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(63,169,255,0.25),_transparent_55%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,rgba(255,255,255,0.08)_0%,transparent_60%,rgba(255,118,200,0.2)_100%)]" />
             <div className="relative flex flex-col gap-6">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.35em] text-cyan-100/70">Time Remaining</p>
-                  <span className={`text-5xl font-bold ${getTimerColor()} transition-colors duration-300`}>{timeRemaining}s</span>
+                  <p className="text-[11px] uppercase tracking-[0.45em] text-white/60">Time remaining</p>
+                  <span className={`text-5xl font-semibold ${getTimerColor()} transition-colors duration-300`}>{timeRemaining}s</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-white/70">
+                <div className="flex items-center gap-3 text-xs uppercase tracking-[0.4em] text-white/60">
                   <span className="inline-flex h-2 w-2 animate-ping rounded-full bg-cyan-400" aria-hidden="true" />
-                  Guess before the beat drops!
+                  Submit before silence
                 </div>
               </div>
 
-              <div className="h-4 w-full overflow-hidden rounded-full border border-white/10 bg-white/10">
+              <div className="h-3 w-full overflow-hidden rounded-full border border-white/15 bg-white/10">
                 <div
-                  className={`h-full rounded-full bg-gradient-to-r ${getProgressColor()} shadow-[0_0_25px_rgba(56,189,248,0.45)] transition-all duration-700 ease-linear`}
+                  className={`h-full rounded-full bg-gradient-to-r ${getProgressColor()} shadow-[0_0_35px_rgba(63,169,255,0.45)] transition-all duration-700 ease-linear`}
                   style={{ width: `${progressPercentage}%` }}
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="group relative flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm font-medium text-white/70 transition-all focus-within:border-cyan-400/80 focus-within:bg-cyan-400/10">
-                  <span className="text-xs uppercase tracking-[0.35em] text-white/50">Artist</span>
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="group relative flex flex-col gap-2 overflow-hidden rounded-2xl border border-white/12 bg-white/10 p-5 text-xs font-semibold uppercase tracking-[0.4em] text-white/60 transition-all focus-within:border-fuchsia-400/70 focus-within:bg-fuchsia-400/15">
+                  Artist signature
                   <input
                     type="text"
                     value={artistInput}
                     onChange={(e) => setArtistInput(e.target.value)}
                     placeholder="Who’s performing?"
                     disabled={hasSubmitted}
-                    className="w-full bg-transparent text-lg font-semibold text-white placeholder:text-white/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-3 w-full bg-transparent text-lg font-semibold uppercase tracking-[0.2em] text-white placeholder:text-white/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
                   />
-                  <span className="pointer-events-none absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 text-xl text-white shadow-[0_8px_24px_rgba(14,165,233,0.4)]">
+                  <span className="pointer-events-none absolute -right-2 -top-2 flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-gradient-to-br from-fuchsia-500 via-sky-500 to-cyan-500 text-xl text-white shadow-[0_18px_50px_rgba(76,180,255,0.45)]">
                     🎤
                   </span>
                 </label>
 
-                <label className="group relative flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm font-medium text-white/70 transition-all focus-within:border-cyan-400/80 focus-within:bg-cyan-400/10">
-                  <span className="text-xs uppercase tracking-[0.35em] text-white/50">Song Title</span>
+                <label className="group relative flex flex-col gap-2 overflow-hidden rounded-2xl border border-white/12 bg-white/10 p-5 text-xs font-semibold uppercase tracking-[0.4em] text-white/60 transition-all focus-within:border-fuchsia-400/70 focus-within:bg-fuchsia-400/15">
+                  Track designation
                   <input
                     type="text"
                     value={songInput}
                     onChange={(e) => setSongInput(e.target.value)}
                     placeholder="Name that track"
                     disabled={hasSubmitted}
-                    className="w-full bg-transparent text-lg font-semibold text-white placeholder:text-white/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-3 w-full bg-transparent text-lg font-semibold uppercase tracking-[0.2em] text-white placeholder:text-white/30 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
                   />
-                  <span className="pointer-events-none absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-500 text-xl text-white shadow-[0_8px_24px_rgba(192,132,252,0.4)]">
+                  <span className="pointer-events-none absolute -right-2 -top-2 flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 text-xl text-white shadow-[0_18px_50px_rgba(211,110,255,0.45)]">
                     🎵
                   </span>
                 </label>
@@ -852,15 +898,18 @@ function PlayingView({ songUrl, timeRemaining, onSubmitAnswer, reveal, answerRes
             <button
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="group flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 px-8 py-4 text-lg font-semibold text-white shadow-[0_20px_60px_rgba(59,130,246,0.4)] transition-all hover:shadow-[0_24px_70px_rgba(59,130,246,0.55)] disabled:cursor-not-allowed disabled:opacity-60"
+              className={`relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-full px-9 py-4 text-sm font-semibold uppercase tracking-[0.45em] transition-all duration-300
+                ${canSubmit
+                  ? "bg-gradient-to-r from-fuchsia-500 via-blue-500 to-cyan-400 text-white shadow-[0_26px_90px_rgba(76,169,255,0.5)] hover:shadow-[0_30px_110px_rgba(76,169,255,0.65)]"
+                  : "cursor-not-allowed border border-white/20 bg-white/10 text-white/40"}
+              `}
             >
-              <span className="text-xl transition-transform group-hover:translate-x-0.5">✨</span>
-              Submit Answer
+              <span className="text-lg">✹</span>
+              Transmit guess
             </button>
           ) : (
-            <div className="flex w-full items-center justify-center gap-3 rounded-2xl border border-emerald-400/40 bg-emerald-400/15 px-6 py-5 text-lg font-semibold text-emerald-100 shadow-[0_15px_45px_rgba(16,185,129,0.35)]">
-              <span className="text-2xl"></span>
-              Answer locked in! Awaiting reveal…
+            <div className="flex w-full items-center justify-center gap-3 rounded-2xl border border-emerald-400/45 bg-emerald-400/20 px-6 py-5 text-sm font-semibold uppercase tracking-[0.4em] text-emerald-100 shadow-[0_24px_80px_rgba(32,201,151,0.45)]">
+              Response locked · Await reveal
             </div>
           )}
         </>
@@ -878,24 +927,28 @@ interface RevealFeedbackProps {
 function RevealFeedback({ hasSubmitted, answerResult, lastGuess }: RevealFeedbackProps) {
   if (!hasSubmitted) {
     return (
-      <div className="mt-2 space-y-2 rounded-2xl border border-white/15 bg-white/5 p-5 text-left text-white/80 shadow-[0_12px_35px_rgba(148,163,184,0.25)]">
-        <div className="flex items-center gap-3 text-base font-semibold text-white/90">
-          <span className="text-2xl">⌛</span>
-          No answer submitted
+      <div className="mt-2 space-y-2 rounded-2xl border border-white/15 bg-white/10 p-5 text-left text-white/80 shadow-[0_24px_80px_rgba(94,108,137,0.35)]">
+        <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em] text-white">
+          <span className="text-lg">⌛</span>
+          Awaiting transmission
         </div>
-        <p className="text-sm text-white/70">You can still rack up points solo—jump back in when the next round drops.</p>
+        <p className="text-xs text-white/65">
+          Log both artist and title to submit a guess. The channel remains open until the timer expires.
+        </p>
       </div>
     );
   }
 
   if (!answerResult) {
     return (
-      <div className="mt-2 space-y-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/10 p-5 text-left text-cyan-100 shadow-[0_12px_35px_rgba(6,182,212,0.25)]">
-        <div className="flex items-center gap-3 text-base font-semibold">
-          <span className="text-2xl">📡</span>
-          Checking your answer…
+      <div className="mt-2 space-y-2 rounded-2xl border border-cyan-400/40 bg-cyan-400/15 p-5 text-left text-cyan-100 shadow-[0_24px_80px_rgba(67,206,255,0.35)]">
+        <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em]">
+          <span className="text-lg">📡</span>
+          Signal analysis in progress
         </div>
-        <p className="text-sm text-cyan-100/80">Hang tight—your results arrive the moment the host wraps the timer.</p>
+        <p className="text-xs text-cyan-100/80">
+          Host console is verifying every guess. Results deploy instantly when the reveal cycle begins.
+        </p>
       </div>
     );
   }
@@ -935,17 +988,17 @@ function RevealFeedback({ hasSubmitted, answerResult, lastGuess }: RevealFeedbac
 
   return (
     <div className={containerClasses}>
-      <div className="flex flex-wrap items-center gap-3 text-base font-semibold">
-        <span className="text-2xl">{icon}</span>
+      <div className="flex flex-wrap items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em]">
+        <span className="text-lg">{icon}</span>
         <span>{headline}</span>
         <span className={badgeClasses}>{scoreAwarded > 0 ? `+${scoreAwarded} pts` : "0 pts"}</span>
       </div>
       {lastGuess && (
-        <p className="text-sm text-white/80">
-          <span className="font-semibold text-white">Your guess:</span> {lastGuess.artist || "—"} — “{lastGuess.title || "—"}”
+        <p className="text-xs text-white/80">
+          <span className="font-semibold text-white">Logged:</span> {lastGuess.artist || "—"} — “{lastGuess.title || "—"}”
         </p>
       )}
-      <p className="text-sm opacity-90">{description}</p>
+      <p className="text-xs opacity-90">{description}</p>
     </div>
   );
 }
@@ -954,55 +1007,60 @@ function RevealFeedback({ hasSubmitted, answerResult, lastGuess }: RevealFeedbac
 function LeaderboardView({ leaderboard, currentRound, totalRounds, isHost, onNextRound }: LeaderboardViewProps) {
   return (
     <div className="space-y-10">
-      <div className="text-center">
-        <p className="text-sm uppercase tracking-[0.4em] text-cyan-200/70">Round Recap</p>
-        <h1 className="mt-3 text-5xl font-black text-white drop-shadow-[0_12px_45px_rgba(56,189,248,0.35)]">
-          Round {currentRound} / {totalRounds}
-        </h1>
+      <div className="relative overflow-hidden rounded-[30px] border border-white/12 bg-gradient-to-r from-[#12061f]/90 via-[#04020f]/96 to-[#051c39]/92 p-6 text-center shadow-[0_36px_110px_rgba(6,10,28,0.75)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,118,200,0.25),_transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(140deg,rgba(255,255,255,0.08)_0%,transparent_50%,rgba(63,169,255,0.25)_100%)]" />
+        <div className="relative space-y-3">
+          <p className="text-[11px] uppercase tracking-[0.45em] text-white/60">Round recap</p>
+          <h1 className="text-4xl font-semibold uppercase tracking-[0.3em] text-white">Round {currentRound} / {totalRounds}</h1>
+        </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/70 via-slate-900/40 to-purple-900/40 p-8 shadow-[0_20px_60px_rgba(88,28,135,0.35)]">
-        <div className="pointer-events-none absolute -right-32 top-0 h-64 w-64 rounded-full bg-purple-500/20 blur-3xl" />
-        <div className="pointer-events-none absolute -left-20 bottom-0 h-56 w-56 rounded-full bg-cyan-400/15 blur-3xl" />
+      <div className="relative overflow-hidden rounded-[36px] border border-white/12 bg-gradient-to-br from-[#1c0832]/90 via-[#05030c]/96 to-[#082446]/92 p-8 shadow-[0_42px_120px_rgba(20,8,44,0.75)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(86,175,255,0.22),_transparent_65%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,rgba(255,255,255,0.08)_0%,transparent_55%,rgba(255,118,200,0.2)_100%)]" />
         <div className="relative space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-white">Leaderboard</h2>
-            <span className="rounded-full bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-white/70">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.45em] text-white/60">Leaderboard</p>
+              <h2 className="mt-2 text-2xl font-semibold uppercase tracking-[0.3em] text-white">Signal standings</h2>
+            </div>
+            <span className="rounded-full border border-white/15 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.4em] text-white/70">
               {leaderboard.length} players
             </span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {leaderboard.map((p, index) => {
               const accent =
                 index === 0
-                  ? "from-amber-300/80 via-yellow-400/80 to-orange-500/80"
+                  ? "from-amber-400/85 via-orange-400/85 to-rose-400/85"
                   : index === 1
-                  ? "from-slate-200/70 via-slate-300/70 to-slate-500/70"
+                  ? "from-slate-300/80 via-slate-400/80 to-slate-600/80"
                   : index === 2
-                  ? "from-orange-400/70 via-amber-400/70 to-rose-500/70"
-                  : "from-cyan-500/40 via-blue-500/40 to-purple-500/40";
+                  ? "from-rose-400/80 via-fuchsia-400/80 to-purple-500/80"
+                  : "from-cyan-500/50 via-blue-500/50 to-purple-500/50";
 
               return (
                 <div
                   key={`${p.name}-${index}`}
-                  className={`relative flex items-center justify-between overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r ${accent} px-6 py-4 text-white shadow-[0_15px_45px_rgba(14,165,233,0.25)] backdrop-blur transition-transform hover:-translate-y-0.5`}
+                  className={`relative flex items-center justify-between overflow-hidden rounded-2xl border border-white/12 bg-gradient-to-r ${accent} px-6 py-4 text-white shadow-[0_28px_90px_rgba(48,107,255,0.35)] backdrop-blur transition-transform hover:-translate-y-0.5`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-black/20 text-xl font-bold">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/30 bg-black/30 text-base font-semibold uppercase tracking-[0.3em]">
                       #{index + 1}
                     </div>
                     <div>
-                      <p className="text-lg font-semibold">
+                      <p className="text-lg font-semibold uppercase tracking-[0.25em]">
                         {index === 0 && "🥇 "}
                         {index === 1 && "🥈 "}
                         {index === 2 && "🥉 "}
                         {p.name}
                       </p>
-                      <p className="text-xs uppercase tracking-[0.35em] text-white/60">Score</p>
+                      <p className="text-[11px] uppercase tracking-[0.4em] text-white/65">Score</p>
                     </div>
                   </div>
-                  <p className="text-2xl font-bold text-white drop-shadow-[0_4px_18px_rgba(59,130,246,0.4)]">{p.score} pts</p>
+                  <p className="text-2xl font-semibold uppercase tracking-[0.35em] drop-shadow-[0_4px_18px_rgba(72,167,255,0.5)]">{p.score} pts</p>
                 </div>
               );
             })}
@@ -1013,17 +1071,17 @@ function LeaderboardView({ leaderboard, currentRound, totalRounds, isHost, onNex
       {isHost ? (
         <button
           onClick={onNextRound}
-          className="group flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 px-6 py-4 text-lg font-semibold text-slate-950 shadow-[0_20px_60px_rgba(56,189,248,0.45)] transition-all hover:shadow-[0_26px_80px_rgba(56,189,248,0.6)]"
+          className="relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-full px-8 py-4 text-sm font-semibold uppercase tracking-[0.45em] text-white transition-all duration-300 bg-gradient-to-r from-fuchsia-500 via-blue-500 to-cyan-400 shadow-[0_30px_110px_rgba(72,167,255,0.55)] hover:shadow-[0_34px_125px_rgba(72,167,255,0.7)]"
         >
-          <span className="text-xl transition-transform group-hover:translate-x-0.5"></span>
-          Launch Next Round
+          <span className="text-lg">⟳</span>
+          Deploy next round
         </button>
       ) : (
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 py-6 text-center text-white/70">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(6,182,212,0.18),_transparent_60%)]" />
+        <div className="relative overflow-hidden rounded-[30px] border border-white/12 bg-white/10 py-8 text-center text-white/70 shadow-[0_28px_90px_rgba(82,183,255,0.3)]">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(63,169,255,0.25),_transparent_60%)]" />
           <div className="relative flex flex-col items-center gap-3">
             <span className="text-3xl animate-pulse">⏳</span>
-            <p className="text-xs uppercase tracking-[0.35em]">Waiting for host…</p>
+            <p className="text-[11px] uppercase tracking-[0.45em]">Waiting for host</p>
           </div>
         </div>
       )}
@@ -1035,33 +1093,35 @@ function LeaderboardView({ leaderboard, currentRound, totalRounds, isHost, onNex
 function FinalResultsView({ leaderboard }: ResultsViewProps) {
   return (
     <div className="space-y-10">
-      <div className="text-center">
-        <p className="text-sm uppercase tracking-[0.4em] text-amber-200/70">Grand Finale</p>
-        <h1 className="mt-3 text-6xl font-black text-white drop-shadow-[0_16px_60px_rgba(249,115,22,0.45)]">
-          Tempo Champions
-        </h1>
+      <div className="relative overflow-hidden rounded-[34px] border border-white/12 bg-gradient-to-r from-[#241108]/90 via-[#08030f]/96 to-[#09213a]/92 p-8 text-center shadow-[0_48px_140px_rgba(24,12,6,0.75)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,153,85,0.28),_transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,rgba(255,255,255,0.08)_0%,transparent_50%,rgba(82,183,255,0.22)_100%)]" />
+        <div className="relative space-y-3">
+          <p className="text-[11px] uppercase tracking-[0.45em] text-white/60">Grand finale</p>
+          <h1 className="text-4xl font-semibold uppercase tracking-[0.3em] text-white sm:text-5xl">Tempo champions</h1>
+        </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/80 via-slate-900/40 to-amber-900/40 p-10 shadow-[0_25px_80px_rgba(249,115,22,0.35)]">
-        <div className="pointer-events-none absolute -top-28 right-10 h-72 w-72 rounded-full bg-amber-400/25 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-12 h-64 w-64 rounded-full bg-pink-500/20 blur-3xl" />
+      <div className="relative overflow-hidden rounded-[36px] border border-white/12 bg-gradient-to-br from-[#221033]/90 via-[#05030c]/96 to-[#0c253f]/92 p-10 shadow-[0_48px_140px_rgba(20,12,40,0.75)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,162,89,0.22),_transparent_65%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(160deg,rgba(255,255,255,0.08)_0%,transparent_55%,rgba(255,118,200,0.2)_100%)]" />
         <div className="relative space-y-6">
-          <h2 className="text-center text-2xl font-semibold text-white/90">Final Leaderboard</h2>
+          <h2 className="text-center text-2xl font-semibold uppercase tracking-[0.3em] text-white">Final leaderboard</h2>
           <div className="grid gap-4">
             {leaderboard.map((p, index) => {
               const tier =
                 index === 0
-                  ? "from-amber-300/90 via-yellow-400/90 to-orange-500/90"
+                  ? "from-amber-400/85 via-orange-400/85 to-rose-400/85"
                   : index === 1
-                  ? "from-slate-200/80 via-slate-400/80 to-slate-500/80"
+                  ? "from-slate-300/80 via-slate-400/80 to-slate-600/80"
                   : index === 2
-                  ? "from-rose-400/80 via-pink-500/80 to-red-500/80"
-                  : "from-purple-500/40 via-blue-500/40 to-cyan-500/40";
+                  ? "from-rose-400/80 via-fuchsia-400/80 to-purple-500/80"
+                  : "from-cyan-500/40 via-blue-500/40 to-purple-500/40";
 
               return (
                 <div
                   key={`${p.name}-${index}`}
-                  className={`relative flex items-center justify-between overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-r ${tier} px-6 py-5 text-white shadow-[0_20px_60px_rgba(15,23,42,0.45)] backdrop-blur transition-transform hover:-translate-y-0.5`}
+                  className={`relative flex items-center justify-between overflow-hidden rounded-2xl border border-white/12 bg-gradient-to-r ${tier} px-6 py-5 text-white shadow-[0_34px_110px_rgba(82,183,255,0.35)] backdrop-blur transition-transform hover:-translate-y-0.5`}
                 >
                   <div className="flex items-center gap-4">
                     <span className="text-3xl">
@@ -1070,11 +1130,11 @@ function FinalResultsView({ leaderboard }: ResultsViewProps) {
                       {index === 2 && "🥉"}
                     </span>
                     <div>
-                      <p className="text-xl font-semibold">#{index + 1} {p.name}</p>
-                      <p className="text-xs uppercase tracking-[0.35em] text-white/70">Total Score</p>
+                      <p className="text-lg font-semibold uppercase tracking-[0.3em]">#{index + 1} {p.name}</p>
+                      <p className="text-[11px] uppercase tracking-[0.4em] text-white/70">Total score</p>
                     </div>
                   </div>
-                  <p className="text-3xl font-bold text-white drop-shadow-[0_6px_24px_rgba(249,115,22,0.45)]">{p.score} pts</p>
+                  <p className="text-3xl font-semibold uppercase tracking-[0.35em] drop-shadow-[0_6px_24px_rgba(255,163,89,0.45)]">{p.score} pts</p>
                 </div>
               );
             })}
@@ -1088,11 +1148,13 @@ function FinalResultsView({ leaderboard }: ResultsViewProps) {
 function LobbySuspenseFallback() {
   return (
     <GameLayout>
-      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center text-white/80">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-cyan-400" />
-        <div>
-          <p className="text-xs uppercase tracking-[0.4em] text-cyan-200/70">Preparing Lobby</p>
-          <p className="mt-2 text-lg font-semibold text-white">Loading your session details…</p>
+      <div className="relative flex min-h-[40vh] flex-col items-center justify-center gap-5 overflow-hidden rounded-[28px] border border-white/12 bg-white/5 px-8 py-12 text-center text-white/80 shadow-[0_36px_110px_rgba(6,18,45,0.55)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(63,169,255,0.25),_transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(150deg,rgba(255,255,255,0.08)_0%,transparent_55%,rgba(255,118,200,0.2)_100%)]" />
+        <div className="relative space-y-3">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-cyan-400" />
+          <p className="text-[11px] uppercase tracking-[0.45em] text-white/60">Preparing lobby</p>
+          <p className="text-sm text-white/70">Synchronizing playlists and player telemetry…</p>
         </div>
       </div>
     </GameLayout>
